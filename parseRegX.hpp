@@ -24,7 +24,8 @@ private:
         std::shared_ptr<AstNode> ast = parse_K();
         while (currToken < tokenStream.size()) {
             int tokenType = tokenStream[currToken].index;
-            if (tokenType == LITERAL || tokenType == OPEN_PAREN || tokenType == DOT) {
+            if (tokenType == LITERAL || tokenType == OPEN_PAREN || tokenType == DOT || 
+                    tokenType == CARET || tokenType == DOLLAR) {
                 std::shared_ptr<AstNode> left = ast;
                 std::shared_ptr<AstNode> right = parse_K();
                 ast = std::make_shared<SeqAstNode>(left, right);
@@ -64,8 +65,12 @@ private:
             return std::make_shared<LiteralCharacterAstNode>(tokenStream[currToken - 1].val);
         } else if (isMatch(DOT)) {
             return std::make_shared<DotAstNode>();
-        }  else {
-            return nullptr;
+        } else if (isMatch(CARET)) {
+            return std::make_shared<CaretAstNode>();
+        } else if (isMatch(DOLLAR)) {
+            return std::make_shared<DollarAstNode>();
+        } else {
+            throw std::runtime_error("Expected token");
         }
     }
 

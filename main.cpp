@@ -21,12 +21,7 @@ int main() {
         
         ParseRegex parser(tokens);
         std::shared_ptr<AstNode> ast = parser.parse();
+        ast->print();
 
-        MatchResult result = ast->match(text, 0);
-        if (result.isMatch) {
-            std::cout << "Matched!" << std::endl;
-        } else {
-            std::cout << "Not matched!" << std::endl;
-        }
     }
 }

@@ -15,7 +15,8 @@ class AstNode {
 public:
     virtual ~AstNode() = default;
     virtual std::string getLabel() const = 0;
-    virtual MatchResult match(std::string text, int index) const = 0;
+
+    virtual void print(int indent = 0) const = 0;
 };
 
 class OrAstNode : public AstNode {
@@ -29,14 +30,13 @@ public:
         this->right = right;
     }
     std::string getLabel() const override {
-        return "|";
+        return "OR";
     }
-    MatchResult match(const std::string text, int index) const override {
-        MatchResult leftMatch = left->match(text, index);
-        if (leftMatch.isMatch) {
-            return leftMatch;
-        }
-        return right->match(text, index);
+
+    void print(int indent = 0) const override {
+        std::cout << std::string(indent, ' ') << getLabel() << std::endl;
+        if (left) left->print(indent + 2);
+        if (right) right->print(indent + 2);
     }
 
 };
@@ -52,19 +52,13 @@ public:
         this->right = right;
     }
     std::string getLabel() const override {
-        return "x";
+        return "AND";
     }
 
-    MatchResult match(const std::string text, int index) const override {
-        MatchResult leftMatch = left->match(text, index);
-        if (!leftMatch.isMatch) {
-            return {false, 0};
-        }
-        MatchResult rightMatch = right->match(text, leftMatch.index);
-        if (!rightMatch.isMatch) {
-            return {false, 0};
-        }
-        return {true,leftMatch.index + rightMatch.index};
+    void print(int indent = 0) const override {
+        std::cout << std::string(indent, ' ') << getLabel() << std::endl;
+        if (left) left->print(indent + 2);
+        if (right) right->print(indent + 2);
     }
 
 };
@@ -78,22 +72,12 @@ public:
         this->left = left;
     }
     std::string getLabel() const override {
-        return "*";
+        return "STAR";
     }
-
-    MatchResult match(const std::string text, int index) const override {
-        int currIndex = 0;
-        while (true) {
-            MatchResult match = left->match(text, currIndex + index);
-            if (!match.isMatch) {
-                break;
-            }
-            currIndex += match.index;
-        }
-        return {true, currIndex};
+    void print(int indent = 0) const override {
+        std::cout << std::string(indent, ' ') << getLabel() << std::endl;
+        if (left) left->print(indent + 2);
     }
-
-
 };
 
 class PlusAstNode : public AstNode {
@@ -104,26 +88,12 @@ public:
         this->left = left ;
     }
     std::string getLabel() const override {
-        return "+";
+        return "PLUS";
     }
-
-    MatchResult match(const std::string text, int index) const override {
-        MatchResult fMatch = left->match(text, index);
-        if (!fMatch.isMatch) {
-            return {false, 0};
-        }
-        int currIndex = fMatch.index;
-        while (true) {
-            MatchResult match = left->match(text, currIndex + index);
-            if (!match.isMatch) {
-                break;
-            }
-            currIndex += match.index;
-        }
-        return {true, currIndex};
+    void print(int indent = 0) const override {
+        std::cout << std::string(indent, ' ') << getLabel() << std::endl;
+        if (left) left->print(indent + 2);
     }
-
-
 
 };
 
@@ -137,55 +107,40 @@ public:
     std::string getLabel() const override {
         return std::string(1, ch);
     }
-
-    MatchResult match(const std::string text, int index) const override {
-        if (index < text.size() && text[index] == ch) {
-            return {true, 1};
-        }
-        return {false, 0};
+    void print(int indent = 0) const override {
+        std::cout << std::string(indent, ' ') << "LITERAL ; " << getLabel() << std::endl;
     }
 };
 
 class DotAstNode : public AstNode {
 public:
     std::string getLabel() const override {
-        return ".";
+        return "DOT";
     }
-
-    MatchResult match(const std::string text, int index) const override {
-        if (index < text.size()) {
-            return {true, 1};
-        }
-        return {false, 0};
+    void print(int indent = 0) const override {
+        std::cout << std::string(indent, ' ') << getLabel() << std::endl;
     }
 };
 
 class CaretAstNode : public AstNode {
 public:
     std::string getLabel() const override {
-        return "^";
+        return "CARET";
     }
-
-    MatchResult match(const std::string text, int index) const override {
-        if (index == 0) {
-            return {true, 0};
-        }
-        return {false, 0};
+    void print(int indent = 0) const override {
+        std::cout << std::string(indent, ' ') << getLabel() << std::endl;
     }
 };
 
 class DollarAstNode : public AstNode {
 public:
     std::string getLabel() const override {
-        return "$";
+        return "END";
+    }
+    void print(int indent = 0) const override {
+        std::cout << std::string(indent, ' ') << getLabel() << std::endl;
     }
 
-    MatchResult match(const std::string text, int index) const override {
-        if (index == text.size()) {
-            return {true, 0};
-        }
-        return {false, 0};
-    }
 };
 
 class QuestionAstNode : public AstNode {
@@ -196,14 +151,9 @@ public:
         this->left = left;
     }
     std::string getLabel() const override {
-        return "?";
+        return "OPTIONAL";
     }
-
-    MatchResult match(const std::string text, int index) const override {
-        MatchResult match = left->match(text, index);
-        if (match.isMatch) {
-            return match;
-        }
-        return {true, 0};
+    void print(int indent = 0) const override {
+        std::cout << std::string(indent, ' ') << getLabel() << std::endl;
     }
 };
