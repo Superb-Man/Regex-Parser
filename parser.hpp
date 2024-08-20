@@ -52,7 +52,7 @@ public:
         this->right = right;
     }
     std::string getLabel() const override {
-        return ".";
+        return "x";
     }
 
     MatchResult match(const std::string text, int index) const override {

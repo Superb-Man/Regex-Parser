@@ -24,7 +24,7 @@ private:
         std::shared_ptr<AstNode> ast = parse_K();
         while (currToken < tokenStream.size()) {
             int tokenType = tokenStream[currToken].index;
-            if (tokenType == LITERAL || tokenType == OPEN_PAREN) {
+            if (tokenType == LITERAL || tokenType == OPEN_PAREN || tokenType == DOT) {
                 std::shared_ptr<AstNode> left = ast;
                 std::shared_ptr<AstNode> right = parse_K();
                 ast = std::make_shared<SeqAstNode>(left, right);
@@ -37,14 +37,22 @@ private:
 
     std::shared_ptr<AstNode> parse_K() {
         std::shared_ptr<AstNode> ast = parse_S();
-        if (isMatch(STAR)) {
-            ast = std::make_shared<StarAstNode>(ast);
-        } else if (isMatch(PLUS)) {
-            ast = std::make_shared<PlusAstNode>(ast);
-        } else if (isMatch(QUESTION)) {
-            ast = std::make_shared<QuestionAstNode>(ast);
+        while (currToken < tokenStream.size()) {
+            int tokenType = tokenStream[currToken].index;
+            if (tokenType == STAR) {
+                ast = std::make_shared<StarAstNode>(ast);
+                currToken++;
+            } else if (tokenType == PLUS) {
+                ast = std::make_shared<PlusAstNode>(ast);
+                currToken++;
+            } else if (tokenType == QUESTION) {
+                ast = std::make_shared<QuestionAstNode>(ast);
+                currToken++;
+            } else {
+                break;
+            }
         }
-        return ast;
+            return ast;
     }
 
     std::shared_ptr<AstNode> parse_S() {
@@ -56,10 +64,6 @@ private:
             return std::make_shared<LiteralCharacterAstNode>(tokenStream[currToken - 1].val);
         } else if (isMatch(DOT)) {
             return std::make_shared<DotAstNode>();
-        } else if (isMatch(CARET)) {
-            return std::make_shared<CaretAstNode>();
-        } else if (isMatch(DOLLAR)) {
-            return std::make_shared<DollarAstNode>();
         }  else {
             return nullptr;
         }
