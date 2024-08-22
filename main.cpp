@@ -20,7 +20,7 @@ int main() {
         }
         
         ParseRegex parser(tokens);
-        std::shared_ptr<AstNode> ast = parser.parse();
+        AstNode* ast = parser.parse();
         ast->print();
 
     }

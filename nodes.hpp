@@ -1,4 +1,7 @@
-#include"lex.hpp"
+#include "lex.hpp"
+#include <iostream>
+#include <set>
+#include <string>
 
 struct MatchResult {
     bool isMatch;
@@ -10,25 +13,28 @@ struct MatchResult {
     }
 };
 
-
 class AstNode {
 public:
     virtual ~AstNode() = default;
     virtual std::string getLabel() const = 0;
-
     virtual void print(int indent = 0) const = 0;
 };
 
 class OrAstNode : public AstNode {
-
 public:
-    std::shared_ptr<AstNode> left;
-    std::shared_ptr<AstNode> right;
+    AstNode* left;
+    AstNode* right;
 
-    OrAstNode(std::shared_ptr<AstNode> left, std::shared_ptr<AstNode> right) {
+    OrAstNode(AstNode* left, AstNode* right) {
         this->left = left;
         this->right = right;
     }
+    
+    ~OrAstNode() {
+        delete left;
+        delete right;
+    }
+
     std::string getLabel() const override {
         return "OR";
     }
@@ -38,19 +44,23 @@ public:
         if (left) left->print(indent + 2);
         if (right) right->print(indent + 2);
     }
-
 };
 
 class SeqAstNode : public AstNode {
-
 public:
-    std::shared_ptr<AstNode> left;
-    std::shared_ptr<AstNode> right;
+    AstNode* left;
+    AstNode* right;
 
-    SeqAstNode(std::shared_ptr<AstNode> left, std::shared_ptr<AstNode> right){
+    SeqAstNode(AstNode* left, AstNode* right) {
         this->left = left;
         this->right = right;
     }
+
+    ~SeqAstNode() {
+        delete left;
+        delete right;
+    }
+
     std::string getLabel() const override {
         return "AND";
     }
@@ -60,20 +70,24 @@ public:
         if (left) left->print(indent + 2);
         if (right) right->print(indent + 2);
     }
-
 };
 
 class StarAstNode : public AstNode {
-
 public:
-    std::shared_ptr<AstNode> left;
+    AstNode* left;
 
-    explicit StarAstNode(std::shared_ptr<AstNode> left) {
+    explicit StarAstNode(AstNode* left) {
         this->left = left;
     }
+
+    ~StarAstNode() {
+        delete left;
+    }
+
     std::string getLabel() const override {
         return "STAR";
     }
+
     void print(int indent = 0) const override {
         std::cout << std::string(indent, ' ') << getLabel() << std::endl;
         if (left) left->print(indent + 2);
@@ -82,19 +96,24 @@ public:
 
 class PlusAstNode : public AstNode {
 public:
-    std::shared_ptr<AstNode> left ;
+    AstNode* left;
 
-    explicit PlusAstNode(std::shared_ptr<AstNode> left) {
-        this->left = left ;
+    explicit PlusAstNode(AstNode* left) {
+        this->left = left;
     }
+
+    ~PlusAstNode() {
+        delete left;
+    }
+
     std::string getLabel() const override {
         return "PLUS";
     }
+
     void print(int indent = 0) const override {
         std::cout << std::string(indent, ' ') << getLabel() << std::endl;
         if (left) left->print(indent + 2);
     }
-
 };
 
 class LiteralCharacterAstNode : public AstNode {
@@ -104,11 +123,17 @@ public:
     explicit LiteralCharacterAstNode(char ch) {
         this->ch = ch;
     }
+
     std::string getLabel() const override {
         return std::string(1, ch);
     }
+
     void print(int indent = 0) const override {
-        std::cout << std::string(indent, ' ') << "LITERAL ; " << getLabel() << std::endl;
+        std::cout << std::string(indent, ' ') << "LITERAL , " << getLabel() << std::endl;
+    }
+
+    bool operator<(const LiteralCharacterAstNode& other) const {
+        return std::string(1,ch) < std::string(1,other.ch);
     }
 };
 
@@ -117,6 +142,7 @@ public:
     std::string getLabel() const override {
         return "DOT";
     }
+
     void print(int indent = 0) const override {
         std::cout << std::string(indent, ' ') << getLabel() << std::endl;
     }
@@ -127,6 +153,7 @@ public:
     std::string getLabel() const override {
         return "CARET";
     }
+
     void print(int indent = 0) const override {
         std::cout << std::string(indent, ' ') << getLabel() << std::endl;
     }
@@ -137,23 +164,52 @@ public:
     std::string getLabel() const override {
         return "END";
     }
+
     void print(int indent = 0) const override {
         std::cout << std::string(indent, ' ') << getLabel() << std::endl;
     }
-
 };
 
 class QuestionAstNode : public AstNode {
 public:
-    std::shared_ptr<AstNode> left;
+    AstNode* left;
 
-    explicit QuestionAstNode(std::shared_ptr<AstNode> left) {
+    explicit QuestionAstNode(AstNode* left) {
         this->left = left;
     }
+
+    ~QuestionAstNode() {
+        delete left;
+    }
+
     std::string getLabel() const override {
         return "OPTIONAL";
     }
+
     void print(int indent = 0) const override {
         std::cout << std::string(indent, ' ') << getLabel() << std::endl;
     }
 };
+
+class CharacterClassAstNode : public AstNode {
+public:
+    std::set<LiteralCharacterAstNode>charClass;
+
+    CharacterClassAstNode(std::set<LiteralCharacterAstNode>& charClass) {
+        this->charClass = charClass;
+    }
+
+    std::string getLabel() const override {
+        return "SQBRACKET";
+    }
+
+    void print(int indent = 0) const override {
+        std::cout << std::string(indent, ' ') << getLabel() << std::endl;
+        for (auto node : charClass) {
+            node.print(indent+2);
+        }
+    }
+};
+
+
+// ^a.*b+c?$

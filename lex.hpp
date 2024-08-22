@@ -10,6 +10,9 @@
 #define DOT 8
 #define CARET 9
 #define DOLLAR 10
+#define OPEN_BRACKET 11
+#define CLOSED_BRACKET 12
+#define DASH 13
 
 
 std::pair<int,std::string> getTokenType(char token) {
@@ -22,6 +25,10 @@ std::pair<int,std::string> getTokenType(char token) {
     if (token == '.') return {DOT, "DOT"} ;
     if (token == '^') return {CARET, "CARET"} ;
     if (token == '$') return {DOLLAR, "DOLLAR"} ;
+    if (token == '[') return {OPEN_BRACKET, "OPEN_BRACKET"} ;
+    if (token == ']') return {CLOSED_BRACKET, "CLOSED_BRACKET"} ;
+    if (token == '-') return {DASH, "DASH"} ;
+
 
     return {LITERAL, "LITERAL"} ;
 }
@@ -36,6 +43,9 @@ char getTokenVal(int token) {
     if (token == DOT) return '.' ;
     if (token == CARET) return '^' ;
     if (token == DOLLAR) return '$' ;
+    if (token == OPEN_BRACKET) return '[' ;
+    if (token == CLOSED_BRACKET) return ']' ;
+    if (token == DASH) return '-' ;
     
     return token ;
 }
