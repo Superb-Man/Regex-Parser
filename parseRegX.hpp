@@ -6,7 +6,9 @@
 // K -> S | K *
 // S -> ( R ) | [ L DASH L ] | DOT | CARET | DOLLAR | L
 // L -> LITERAL
-
+void printRule(std::string rule) {
+    std::cout << rule << std::endl;
+}
 
 class ParseRegex {
 private:
@@ -14,32 +16,46 @@ private:
     int currToken;
 
     AstNode* parse_R() {
+        printRule("R -> U");
         return parse_U();
     }
 
     AstNode* parse_U() {
+        bool isU = false;
+
         AstNode* ast = parse_C();
         while (isMatch(OR)) {
             AstNode* left = ast;
             AstNode* right = parse_C();
             ast = new OrAstNode(left, right);
+            isU = true;
         }
+
+        (isU) ? printRule("U -> U OR C") : printRule("U -> C");
         return ast;
     }
 
     AstNode* parse_C() {
+        bool isC = false;
+
         AstNode* ast = parse_K();
         while (currToken < tokenStream.size()) {
             int tokenType = tokenStream[currToken].index;
             if (tokenType == LITERAL || tokenType == OPEN_PAREN || tokenType == DOT || 
-                    tokenType == CARET || tokenType == DOLLAR) {
+                    tokenType == CARET || tokenType == DOLLAR || tokenType == OPEN_BRACKET) {
                 AstNode* left = ast;
                 AstNode* right = parse_K();
                 ast = new SeqAstNode(left,right);
+                
+                isC = true;
+            
             } else {
                 break;
             }
         }
+
+        (isC) ? printRule("C -> C K") : printRule("C -> K");
+
         return ast;
     }
 
@@ -48,71 +64,109 @@ private:
         while (currToken < tokenStream.size()) {
             int tokenType = tokenStream[currToken].index;
             if (tokenType == STAR) {
+                printRule("K -> K *");
                 ast = new StarAstNode(ast);
                 currToken++;
             } else if (tokenType == PLUS) {
+                printRule("K -> K +");
                 ast = new PlusAstNode(ast);
                 currToken++;
             } else if (tokenType == QUESTION) {
+                printRule("K -> K ?");
                 ast = new QuestionAstNode(ast);
                 currToken++;
             } else {
+                printRule("K -> S");
                 break;
             }
         }
-            return ast;
+
+        return ast;
     }
 
     AstNode* parse_S() {
         if (isMatch(OPEN_PAREN)) {
+            
+            printRule("S -> ( R )");
+            
             AstNode* ast = parse_R();
             check(CLOSED_PAREN);
             return ast;
         } else if (isMatch(OPEN_BRACKET)) {
             //  S -> [ LITERAL DASH LITERAL ]
+            printRule("S -> [ L - L ]");
+
             std::set<LiteralCharacterAstNode> charSet;
+            // std::vector<char>list;
             char last = '\0';
+
             while (currToken < tokenStream.size()) {
+                //debug
+                // std::cout << "Cur stream char : " << tokenStream[currToken].val <<std::endl;
+                
                 if (isMatch(CLOSED_BRACKET)) {
+                    currToken--;
                     break;
                 }
-                if (isMatch(LITERAL)) {
+                else if (isMatch(LITERAL)) {
                     char ch = tokenStream[currToken - 1].val;
                     charSet.insert(LiteralCharacterAstNode(ch));
                     last = ch;
-                } else if (isMatch(DASH)) {
+                    // list.push_back(ch);
+                    currToken--;
+                    // if (tokenStream[currToken-1].val == '*') {
+                        // std::cout << "Found a star" <<std::endl;
+                        // break;
+                    // }
+                } else if (isMatch(DASH)) { // dash matched
                     // if set is empty, then the dash is a literal
                     // if the next character is closed bracket it still a literall
                     // otherwise, it is a range 
                     if (charSet.empty() | currToken == tokenStream.size() | 
                         tokenStream[currToken].index == CLOSED_BRACKET) {
                             charSet.insert(LiteralCharacterAstNode('-'));
+                            currToken--;
                     } else {
-                        char start = last;
-                        char endChar = tokenStream[currToken].val;
+                        // char last = list.back();                        
+                        // list.pop_back();
+
+                        int start = int(last);
+                        int endChar = int(tokenStream[currToken].val);
+
+
+                        //debug 
+                        // std::cout << "start " << start << " and End " << endChar <<std::endl;
+                        
                         //insert the range into the set   
-
-                        for (char itr = start; itr <= endChar; itr++) {
-                            charSet.insert(LiteralCharacterAstNode(itr));
+                        if (start > endChar) throw std::runtime_error("start index is higher than end index");
+                        for (int it = start; it <= endChar; it++) {
+                            charSet.insert(LiteralCharacterAstNode(char(it)));
                         }
-                        currToken++;
                         //now its a token!
-                    }
-                }
-            }
-            currToken++;
 
+                    }
+                } 
+                // else {
+                //     throw std::runtime_error("Not handled for this token");
+                // }
+                currToken++;
+            }
+            check(CLOSED_BRACKET);
             return new CharacterClassAstNode(charSet);
         } else if (isMatch(LITERAL)) {
+            printRule("S -> L");
             return new LiteralCharacterAstNode(tokenStream[currToken - 1].val);
         } else if (isMatch(DOT)) {
+            printRule("S -> .");
             return new DotAstNode;
         } else if (isMatch(CARET)) {
+            printRule("S -> ^");
             return new CaretAstNode;
         } else if (isMatch(DOLLAR)) {
+            printRule("S -> $");
             return new DollarAstNode;
         } else {
-            throw std::runtime_error("Expected token");
+            throw std::runtime_error("In parse_S: Not expected token");
         }
     }
 
@@ -129,7 +183,7 @@ private:
 
     void check(int tokenType) {
         if (!isMatch(tokenType)) {
-            throw std::runtime_error("Expected token");
+            throw std::runtime_error("In check: Not expected token");
         }
     }
 
@@ -142,7 +196,9 @@ public:
     AstNode* parse() {
         AstNode* ast = parse_R();
         if (currToken < tokenStream.size()) {
-            throw std::runtime_error("Unchecked token");
+            std::cout << "Token stream size: " << tokenStream.size() << std::endl;
+            std::cout << "Current token: " << currToken << std::endl;
+            throw std::runtime_error("IN PARSE: Not expected token");
         }
         return ast;
     }
