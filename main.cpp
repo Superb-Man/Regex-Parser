@@ -4,29 +4,32 @@
 int main() {
     std::string regex; 
     std::string text;
+    regex = "a+b*(c+de)*f";
+    if (regex == "exit") {
+        return 0;
+    }
+    std::vector<Token> tokens = lexer(regex);
+    // for (const auto& token : tokens) {
+    //     std::cout << token << std::endl; 
+    // }
+        
+    ParseRegex parser(tokens);
+    AstNode* ast = nullptr;
+
+    try {
+        ast = parser.parse();
+        ast->print();
+        std::cout << std::endl;
+    } catch (const std::exception& e) {
+        std::cout << e.what() << std::endl;
+        std::cout << "Invalid regular expression" << std::endl;
+    }
     
 
     while (true) {
-        std::cout << "Enter regex: ";
-        std::getline(std::cin, regex);
-        if (regex == "exit") {
-            break;
-        }
-        // std::cout << "Enter text: ";
-        // std::getline(std::cin, text);
-        std::vector<Token> tokens = lexer(regex);
-        // for (const auto& token : tokens) {
-        //     std::cout << token << std::endl; 
-        // }
-        
-        ParseRegex parser(tokens);
-        try {
-            AstNode* ast = parser.parse();
-            ast->print();
-            std::cout << std::endl;
-        } catch (const std::exception& e) {
-            std::cout << e.what() << std::endl;
-            std::cout << "Invalid regular expression" << std::endl;
-        }
+        std::cout << "Enter text: ";
+        std::getline(std::cin, text);
+        int pos = 0;
+        ast->match(text,pos) ? std::cout << "Matched" << std::endl : std::cout << "Not matched" << std::endl;
     }
 }

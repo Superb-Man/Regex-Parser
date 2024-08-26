@@ -3,21 +3,14 @@
 #include <set>
 #include <string>
 
-struct MatchResult {
-    bool isMatch;
-    int index;
-
-    MatchResult(bool isMatch, int index) {
-        this->isMatch = isMatch;
-        this->index = index;
-    }
-};
 
 class AstNode {
 public:
     virtual ~AstNode() = default;
     virtual std::string getLabel() const = 0;
     virtual void print(int indent = 0) const = 0;
+
+    virtual bool match(std::string& str, int& pos) const = 0;
 };
 
 class OrAstNode : public AstNode {
@@ -44,6 +37,15 @@ public:
         if (left) left->print(indent + 2);
         if (right) right->print(indent + 2);
     }
+
+    bool match(std::string& str, int& pos) const override {
+        if (left->match(str, pos)) {
+            return true;
+        }
+        
+        return right->match(str, pos);
+    }
+    
 };
 
 class SeqAstNode : public AstNode {
@@ -62,13 +64,20 @@ public:
     }
 
     std::string getLabel() const override {
-        return "AND";
+        return "SEQ";
     }
 
     void print(int indent = 0) const override {
         std::cout << std::string(indent, ' ') << getLabel() << std::endl;
         if (left) left->print(indent + 2);
         if (right) right->print(indent + 2);
+    }
+
+    bool match(std::string& str, int& pos) const override {
+        if (left->match(str, pos) && right->match(str, pos)) {
+            return true;
+        }  
+        return false;
     }
 };
 
@@ -92,6 +101,16 @@ public:
         std::cout << std::string(indent, ' ') << getLabel() << std::endl;
         if (left) left->print(indent + 2);
     }
+
+    bool match(std::string& str, int& pos) const override {
+        while (true) {
+            if (!left->match(str, pos)) {
+                break;
+            }
+
+        }
+        return true;
+    }
 };
 
 class PlusAstNode : public AstNode {
@@ -114,6 +133,16 @@ public:
         std::cout << std::string(indent, ' ') << getLabel() << std::endl;
         if (left) left->print(indent + 2);
     }
+
+    bool match(std::string& str, int& pos) const override {
+        if (!left->match(str, pos)) return false;
+        while (true) {
+            if (!left->match(str, pos)) {
+                break;
+            }
+        }
+        return true;
+    }
 };
 
 class LiteralCharacterAstNode : public AstNode {
@@ -135,6 +164,15 @@ public:
     bool operator<(const LiteralCharacterAstNode& other) const {
         return std::string(1,ch) < std::string(1,other.ch);
     }
+
+    bool match(std::string& str, int& pos) const override {
+        if (pos >= str.size()) return false;
+        if (str[pos] == ch) {
+            pos++;
+            return true;
+        }
+        return false;
+    }
 };
 
 class DotAstNode : public AstNode {
@@ -145,6 +183,10 @@ public:
 
     void print(int indent = 0) const override {
         std::cout << std::string(indent, ' ') << getLabel() << std::endl;
+    }
+
+    bool match(std::string& str, int& pos) const override {
+        return false;
     }
 };
 
@@ -157,16 +199,24 @@ public:
     void print(int indent = 0) const override {
         std::cout << std::string(indent, ' ') << getLabel() << std::endl;
     }
+
+    bool match(std::string& str, int& pos) const override {
+        return false;
+    }
 };
 
 class DollarAstNode : public AstNode {
 public:
     std::string getLabel() const override {
-        return "END";
+        return "DOLARA";
     }
 
     void print(int indent = 0) const override {
         std::cout << std::string(indent, ' ') << getLabel() << std::endl;
+    }
+
+    bool match(std::string& str, int& pos) const override {
+        return false;
     }
 };
 
@@ -188,6 +238,11 @@ public:
 
     void print(int indent = 0) const override {
         std::cout << std::string(indent, ' ') << getLabel() << std::endl;
+        if (left) left->print(indent + 2);
+    }
+
+    bool match(std::string& str, int& pos) const override {
+        return false;
     }
 };
 
@@ -208,6 +263,10 @@ public:
         for (auto node : charClass) {
             node.print(indent+2);
         }
+    }
+
+    bool match(std::string& str, int& pos) const override {
+        return false;
     }
 };
 
