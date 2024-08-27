@@ -1,11 +1,13 @@
 #include "nodes.hpp"
 
+// all grammar
 // R -> U
-// U -> C | U OR C
-// C -> K | C K
-// K -> S | K *
-// S -> ( R ) | [ L DASH L ] | DOT | CARET | DOLLAR | L
-// L -> LITERAL
+// U -> U OR C | C
+// C -> C K | K
+// K -> K * | K + | K ? | S
+// S -> ( R ) | [ LITERAL DASH LITERAL ] | LITERAL | . | ^ | $
+
+
 void printRule(std::string rule) {
     std::cout << rule << std::endl;
 }
@@ -64,18 +66,36 @@ private:
         while (currToken < tokenStream.size()) {
             int tokenType = tokenStream[currToken].index;
             if (tokenType == STAR) {
-                printRule("K -> K *");
-                ast = new StarAstNode(ast);
                 currToken++;
+
+                if (currToken < tokenStream.size() && tokenStream[currToken].index == QUESTION) {
+                    printRule("K -> K * ?");
+                    ast = new StarNonGreedyAstNode(ast);
+                    currToken++;
+                } 
+                else {
+                    printRule("K -> K *");
+                    ast = new StarAstNode(ast);
+                }
             } else if (tokenType == PLUS) {
-                printRule("K -> K +");
-                ast = new PlusAstNode(ast);
                 currToken++;
+
+                if (currToken < tokenStream.size() && tokenStream[currToken].index == QUESTION) {
+                    printRule("K -> K + ?");
+                    std::cout << "Found a plus and question" <<std::endl;
+                    ast = new PlusNonGreedyAstNode(ast);
+                    currToken++;
+                } 
+                else {
+                    printRule("K -> K +");
+                    ast = new PlusAstNode(ast);
+                }
             } else if (tokenType == QUESTION) {
                 printRule("K -> K ?");
                 ast = new QuestionAstNode(ast);
                 currToken++;
-            } else {
+            } 
+            else {
                 printRule("K -> S");
                 break;
             }
@@ -107,8 +127,7 @@ private:
                 if (isMatch(CLOSED_BRACKET)) {
                     currToken--;
                     break;
-                }
-                else if (isMatch(LITERAL)) {
+                } else if (isMatch(LITERAL)) {
                     char ch = tokenStream[currToken - 1].val;
                     charSet.insert(LiteralCharacterAstNode(ch));
                     last = ch;

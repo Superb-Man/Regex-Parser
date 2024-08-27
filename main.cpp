@@ -4,7 +4,11 @@
 int main() {
     std::string regex; 
     std::string text;
-    regex = "a+b*(c+de)*f";
+    // regex = "a+b*(c+de)*f";
+    // regex = "a*b+c?(d+)?";
+    // regex = "a[a-zA-Z0-9.]";
+    regex = "a*b+c?d*?xyz+";
+
     if (regex == "exit") {
         return 0;
     }
@@ -30,6 +34,6 @@ int main() {
         std::cout << "Enter text: ";
         std::getline(std::cin, text);
         int pos = 0;
-        ast->match(text,pos) ? std::cout << "Matched" << std::endl : std::cout << "Not matched" << std::endl;
+        ast->match(text,pos) && pos == text.size() ? std::cout << "Matched" << std::endl : std::cout << "Not matched" << std::endl;
     }
 }

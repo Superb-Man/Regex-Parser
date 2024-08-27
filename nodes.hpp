@@ -103,12 +103,49 @@ public:
     }
 
     bool match(std::string& str, int& pos) const override {
+        int originalPos = pos;
         while (true) {
             if (!left->match(str, pos)) {
                 break;
             }
-
         }
+        return true;
+    }
+};
+
+class StarNonGreedyAstNode : public AstNode {
+public:
+    AstNode* left;
+
+    explicit StarNonGreedyAstNode(AstNode* left) {
+        this->left = left;
+    }
+
+    ~StarNonGreedyAstNode() {
+        delete left;
+    }
+
+    std::string getLabel() const override {
+        return "STAR_NON_GREEDY";
+    }
+
+    void print(int indent = 0) const override {
+        std::cout << std::string(indent, ' ') << getLabel() << std::endl;
+        if (left) left->print(indent + 2);
+    }
+
+    bool match(std::string& str, int& pos) const override {
+        // exactly 0 occurance
+        int originalPos = pos;
+        while (true) {
+            if (!left->match(str, pos)) {
+                break;
+            }
+            if (pos < str.size() && left->match(str, pos)) {
+                return true;
+            }
+        }
+        pos = originalPos;
         return true;
     }
 };
@@ -144,6 +181,34 @@ public:
         return true;
     }
 };
+
+
+class PlusNonGreedyAstNode : public AstNode {
+public:
+    AstNode* left;
+
+    explicit PlusNonGreedyAstNode(AstNode* left) {
+        this->left = left;
+    }
+
+    ~PlusNonGreedyAstNode() {
+        delete left;
+    }
+
+    std::string getLabel() const override {
+        return "PLUS_NON_GREEDY";
+    }
+
+    void print(int indent = 0) const override {
+        std::cout << std::string(indent, ' ') << getLabel() << std::endl;
+        if (left) left->print(indent + 2);
+    }
+
+    bool match(std::string& str, int& pos) const override {
+        return left->match(str, pos);
+    }
+};
+
 
 class LiteralCharacterAstNode : public AstNode {
 public:
@@ -186,7 +251,10 @@ public:
     }
 
     bool match(std::string& str, int& pos) const override {
-        return false;
+        // Match any character except newline
+        if (pos >= str.size()) return false;
+        pos++;
+        return true;
     }
 };
 
@@ -201,6 +269,7 @@ public:
     }
 
     bool match(std::string& str, int& pos) const override {
+        //Not implemented
         return false;
     }
 };
@@ -216,7 +285,7 @@ public:
     }
 
     bool match(std::string& str, int& pos) const override {
-        return false;
+        return pos == str.size() ;
     }
 };
 
@@ -242,7 +311,11 @@ public:
     }
 
     bool match(std::string& str, int& pos) const override {
-        return false;
+        // only match atmost one time
+        left->match(str, pos);
+        return true;
+        
+        
     }
 };
 
@@ -266,9 +339,16 @@ public:
     }
 
     bool match(std::string& str, int& pos) const override {
+        if (pos >= str.size()) return false;
+        for (auto node : charClass) {
+            if (node.match(str, pos)) {
+                return true;
+            }
+        }
         return false;
     }
 };
 
 
 // ^a.*b+c?$
+
