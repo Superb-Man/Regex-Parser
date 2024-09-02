@@ -5,7 +5,7 @@
 // U -> U OR C | C
 // C -> C K | K
 // K -> K * | K + | K ? | S
-// S -> ( R ) | [ LITERAL DASH LITERAL ] | LITERAL | . | ^ | $
+// S -> ( R ) | ( ? ! R ) | [ LITERAL DASH LITERAL ] | LITERAL | . | ^ | $
 
 
 void printRule(std::string rule) {
@@ -82,7 +82,7 @@ private:
 
                 if (currToken < tokenStream.size() && tokenStream[currToken].index == QUESTION) {
                     printRule("K -> K + ?");
-                    std::cout << "Found a plus and question" <<std::endl;
+                    // std::cout << "Found a plus and question" <<std::endl;
                     ast = new PlusNonGreedyAstNode(ast);
                     currToken++;
                 } 
@@ -106,12 +106,17 @@ private:
 
     AstNode* parse_S() {
         if (isMatch(OPEN_PAREN)) {
-            
-            printRule("S -> ( R )");
-            
-            AstNode* ast = parse_R();
-            check(CLOSED_PAREN);
-            return ast;
+            if (isMatch(QUESTION) && isMatch(EXCLAMATION)) {
+                printRule("S -> ( ? ! R )");
+                AstNode* ast = parse_R();
+                check(CLOSED_PAREN);
+                return new NegativeLookAheadAstNode(ast);
+            } else {
+                printRule("S -> ( R )");
+                AstNode* ast = parse_R();
+                check(CLOSED_PAREN);
+                return ast;
+            }
         } else if (isMatch(OPEN_BRACKET)) {
             //  S -> [ LITERAL DASH LITERAL ]
             printRule("S -> [ L - L ]");
@@ -222,4 +227,3 @@ public:
         return ast;
     }
 };
-

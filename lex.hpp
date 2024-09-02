@@ -13,6 +13,8 @@
 #define OPEN_BRACKET 11
 #define CLOSED_BRACKET 12
 #define DASH 13
+#define EXCLAMATION 14
+#define SEQ 15
 
 
 std::pair<int,std::string> getTokenType(char token) {
@@ -28,6 +30,7 @@ std::pair<int,std::string> getTokenType(char token) {
     if (token == '[') return {OPEN_BRACKET, "OPEN_BRACKET"} ;
     if (token == ']') return {CLOSED_BRACKET, "CLOSED_BRACKET"} ;
     if (token == '-') return {DASH, "DASH"} ;
+    if (token == '!') return {EXCLAMATION, "EXCLAMATION"} ;
 
 
     return {LITERAL, "LITERAL"} ;
@@ -46,6 +49,7 @@ char getTokenVal(int token) {
     if (token == OPEN_BRACKET) return '[' ;
     if (token == CLOSED_BRACKET) return ']' ;
     if (token == DASH) return '-' ;
+    if (token == EXCLAMATION) return '!' ;
     
     return token ;
 }

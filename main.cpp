@@ -7,7 +7,13 @@ int main() {
     // regex = "a+b*(c+de)*f";
     // regex = "a*b+c?(d+)?";
     // regex = "a[a-zA-Z0-9.]";
-    regex = "a*b+c?d*?xyz+";
+    // regex = "a*b+c?d*?xyz+";
+    regex = "a(?!lara)62";
+    regex = "a(?![a-z])62";
+    regex = "a.*62";
+    // regex = "a[0-9]*62";
+    regex = "a.*b";
+    // regex = "a.?b";
 
     if (regex == "exit") {
         return 0;
