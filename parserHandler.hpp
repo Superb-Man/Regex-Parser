@@ -2,7 +2,7 @@
 
 class ParserHandler {
 private:
-    std::vector<AstNode*> trees;
+    std::vector<std::pair<AstNode*,bool>> trees;
     std::vector<Token> tokens;
     std::string regex;
 
@@ -14,7 +14,8 @@ private:
             if (tokens[i].index == OPEN_PAREN) {
                 parenStart = i;
             }
-            if (i < tokens.size()-1 && ((tokens[i].index == DOT && tokens[i+1].index == STAR)
+            if ((i < tokens.size()-1 && tokens[i+1].index != OR) 
+            &&  ((tokens[i].index == DOT && tokens[i+1].index == STAR)
             || (tokens[i].index == DOT && tokens[i+1].index == PLUS)
             || (tokens[i].index == DOT && tokens[i+1].index == QUESTION)
             || (tokens[i].index == CLOSED_BRACKET && tokens[i+1].index == STAR)
@@ -79,13 +80,18 @@ private:
         for (auto tree : trees) {
             bool isMatch = false;
             // check for all starting points
-            // for (int i = pos; i < str.size(); i++) {
-                if (tree->match(str, pos) && pos == str.size()) {
-                    isMatch = true;
-                    std::cout << "Matched a part" << std::endl;
-                    break;
+            if (tree.second) {
+                for (int i = pos ; i < str.size(); i++) {
+                    if (tree.first->match(str, pos) && pos == str.size()) {
+                        isMatch = true;
+                        break;
+                    }
                 }
-            // }
+            }
+            else {
+                isMatch = tree.first->match(str, pos) && pos == str.size();
+                std::cout << pos << std::endl;
+            }
             curMatch = curMatch && isMatch;
 
             if (!curMatch) {
@@ -103,7 +109,8 @@ public:
         splitTree();
     }
     void addTree(AstNode* tree) {
-        trees.push_back(tree);
+        bool siz = trees.size() > 0 ? true : false; 
+        trees.push_back({tree,siz});
     }
 
     bool matchString(std::string str) {

@@ -108,11 +108,9 @@ public:
             if (!left->match(str, pos)) {
                 break;
             }
+            originalPos = pos;
         }
-        // if left node is dot
-        if (left->getLabel() == "DOT") {
-            pos = originalPos;
-        }
+        pos = originalPos;
         return true;
     }
 };
@@ -176,17 +174,15 @@ public:
     }
 
     bool match(std::string& str, int& pos) const override {
-        int originalPos = pos;
         if (!left->match(str, pos)) return false;
+        int originalPos = pos;
         while (true) {
             if (!left->match(str, pos)) {
                 break;
             }
+            originalPos = pos;
         }
-        // if left node is dot
-        if (left->getLabel() == "DOT") {
-            pos = originalPos;
-        }
+        pos = originalPos;
         return true;
     }
 };
@@ -262,11 +258,8 @@ public:
     bool match(std::string& str, int& pos) const override {
         // Match any character except newline
         if (pos >= str.size()) return false;
-        if (str[pos] != '\n') {
-            pos++;
-            return true;
-        }
-        return false;
+        pos++;
+        return true;
     }
 };
 
@@ -281,7 +274,8 @@ public:
     }
 
     bool match(std::string& str, int& pos) const override {
-        return pos == 0;
+        //Not implemented
+        return false;
     }
 };
 
@@ -323,45 +317,10 @@ public:
 
     bool match(std::string& str, int& pos) const override {
         // only match atmost one time
-        int originalPos = pos;
-        if (left->match(str, pos)) {
-            return true;
-        }
-        pos = originalPos;
+        left->match(str, pos);
         return true;
         
         
-    }
-};
-
-class NegativeLookAheadAstNode : public AstNode {
-public:
-    AstNode* left;
-
-    explicit NegativeLookAheadAstNode(AstNode* left) {
-        this->left = left;
-    }
-
-    ~NegativeLookAheadAstNode() {
-        delete left;
-    }
-
-    std::string getLabel() const override {
-        return "NEGATIVE_LOOKAHEAD";
-    }
-
-    void print(int indent = 0) const override {
-        std::cout << std::string(indent, ' ') << getLabel() << std::endl;
-        if (left) left->print(indent + 2);
-    }
-
-    bool match(std::string& str, int& pos) const override {
-        if (left->match(str, pos)) { // if any of the character matches 
-            return false;
-        }
-        std::cout << "Negative lookahead passed" << std::endl;
-        // didnot match
-        return true;
     }
 };
 
@@ -394,7 +353,35 @@ public:
         return false;
     }
 };
+class NegativeLookAheadAstNode : public AstNode {
+public:
+    AstNode* left;
 
+    explicit NegativeLookAheadAstNode(AstNode* left) {
+        this->left = left;
+    }
+
+    ~NegativeLookAheadAstNode() {
+        delete left;
+    }
+
+    std::string getLabel() const override {
+        return "NEGATIVE_LOOKAHEAD";
+    }
+
+    void print(int indent = 0) const override {
+        std::cout << std::string(indent, ' ') << getLabel() << std::endl;
+        if (left) left->print(indent + 2);
+    }
+
+    bool match(std::string& str, int& pos) const override {
+        if (left->match(str, pos)) { // if any of the character matches 
+            return false;
+        }
+        std::cout << "Negative lookahead passed" << std::endl;
+        // didnot match
+        return true;
+    }
+};
 
 // ^a.*b+c?$
-

@@ -10,10 +10,19 @@ int main() {
     // regex = "a*b+c?d*?xyz+";
     regex = "a(?!lara)62";
     regex = "a(?![a-z])62";
-    regex = "a.*62";
+    regex = "a(.6)*d";
     // regex = "a[0-9]*62";
-    regex = "a.*b";
+    // regex = "acd*b";
     // regex = "a.?b";
+    // regex = "a[a-z]*b";
+    // regex = "a(.*bc|c*)+";
+    // regex = "a([a-z].)*";
+    regex = "a(.bcd[a-z])*62";
+    regex = "a.*b";
+    regex = "(.a.*)*bc";
+    regex = "a(.sb)*bc*";
+    std::cout << regex << std::endl;
+
 
     if (regex == "exit") {
         return 0;
@@ -40,6 +49,7 @@ int main() {
         std::cout << "Enter text: ";
         std::getline(std::cin, text);
         int pos = 0;
+        int LOOP = 0;
         ast->match(text,pos) && pos == text.size() ? std::cout << "Matched" << std::endl : std::cout << "Not matched" << std::endl;
     }
 }
