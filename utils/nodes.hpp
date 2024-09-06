@@ -1,7 +1,29 @@
+#pragma once
 #include "lex.hpp"
 #include <iostream>
 #include <set>
 #include <string>
+
+//Forward declaration of AstNode
+class AstNode;
+//other nodes
+class OrAstNode;
+class SeqAstNode;
+class StarAstNode;
+class StarNonGreedyAstNode;
+class PlusAstNode;
+class PlusNonGreedyAstNode;
+class LiteralCharacterAstNode;
+class DotAstNode;
+class CaretAstNode;
+class DollarAstNode;
+class QuestionAstNode;
+class CharacterClassAstNode;
+class NegativeLookAheadAstNode;
+
+//functions
+bool tryMatch(AstNode* node, std::string& str, int& pos);
+
 
 
 class AstNode {
@@ -9,6 +31,8 @@ public:
     virtual ~AstNode() = default;
     virtual std::string getLabel() const = 0;
     virtual void print(int indent = 0) const = 0;
+
+    virtual bool match(std::string& str, int& pos) = 0;
 };
 
 class OrAstNode : public AstNode {
@@ -36,6 +60,13 @@ public:
         if (right) right->print(indent + 2);
     }
 
+    bool match(std::string& str, int& pos) override {
+        if (left->match(str, pos)) {
+            return true;
+        }
+        
+        return right->match(str, pos);
+    }
     
 };
 
@@ -63,6 +94,13 @@ public:
         if (left) left->print(indent + 2);
         if (right) right->print(indent + 2);
     }
+
+    bool match(std::string& str, int& pos) override {
+        if (left->match(str, pos) && right->match(str, pos)) {
+            return true;
+        }  
+        return false;
+    }
 };
 
 class StarAstNode : public AstNode {
@@ -84,6 +122,19 @@ public:
     void print(int indent = 0) const override {
         std::cout << std::string(indent, ' ') << getLabel() << std::endl;
         if (left) left->print(indent + 2);
+    }
+
+    bool match(std::string& str, int& pos) override {
+        int originalPos = pos;
+        while (true) {
+            if (!left->match(str, pos)) {
+                break;
+            }
+            originalPos = pos;
+        }
+        pos = originalPos;
+
+        return true;
     }
 };
 
@@ -107,7 +158,18 @@ public:
         std::cout << std::string(indent, ' ') << getLabel() << std::endl;
         if (left) left->print(indent + 2);
     }
+
+    bool match(std::string& str, int& pos) override {
+        //NOT IMPLEMENTED YET
+        return true;
+    }
+
+
+
 };
+
+
+
 
 class PlusAstNode : public AstNode {
 public:
@@ -128,6 +190,22 @@ public:
     void print(int indent = 0) const override {
         std::cout << std::string(indent, ' ') << getLabel() << std::endl;
         if (left) left->print(indent + 2);
+    }
+
+    bool match(std::string& str, int& pos) override {
+        if (!left->match(str, pos)) {
+            return false;
+        }
+        int originalPos = pos;
+        while (true) {
+            if (!left->match(str, pos)) {
+                break;
+            }
+            originalPos = pos;
+        }
+        pos = originalPos;
+
+        return true;
     }
 };
 
@@ -152,6 +230,11 @@ public:
         std::cout << std::string(indent, ' ') << getLabel() << std::endl;
         if (left) left->print(indent + 2);
     }
+
+    bool match(std::string& str, int& pos) override { 
+        //NOT IMPLEMENTED YET
+        return true;
+    }
 };
 
 
@@ -174,6 +257,15 @@ public:
     bool operator<(const LiteralCharacterAstNode& other) const {
         return std::string(1,ch) < std::string(1,other.ch);
     }
+
+    bool match(std::string& str, int& pos) override {
+        if (pos >= str.size()) return false;
+        if (str[pos] == ch) {
+            pos++;
+            return true;
+        }
+        return false;
+    }
 };
 
 class DotAstNode : public AstNode {
@@ -184,6 +276,16 @@ public:
 
     void print(int indent = 0) const override {
         std::cout << std::string(indent, ' ') << getLabel() << std::endl;
+    }
+
+    bool match(std::string& str, int& pos) override {
+        // Match any character except newline
+        if (pos >= str.size()) return false;
+        if (str[pos] != '\n') {
+            pos++;
+            return true;
+        }
+        return false;
     }
 };
 
@@ -196,6 +298,10 @@ public:
     void print(int indent = 0) const override {
         std::cout << std::string(indent, ' ') << getLabel() << std::endl;
     }
+
+    bool match(std::string& str, int& pos) override {
+        return pos == 0;
+    }
 };
 
 class DollarAstNode : public AstNode {
@@ -206,6 +312,10 @@ public:
 
     void print(int indent = 0) const override {
         std::cout << std::string(indent, ' ') << getLabel() << std::endl;
+    }
+
+    bool match(std::string& str, int& pos) override {
+        return pos == str.size() ;
     }
 };
 
@@ -222,12 +332,24 @@ public:
     }
 
     std::string getLabel() const override {
-        return "OPTIONAL";
+        return "QUESTION";
     }
 
     void print(int indent = 0) const override {
         std::cout << std::string(indent, ' ') << getLabel() << std::endl;
         if (left) left->print(indent + 2);
+    }
+
+    bool match(std::string& str, int& pos) override {
+        // only match atmost one time
+        int originalPos = pos;
+        if (left->match(str, pos)) {
+            return true;
+        }
+        pos = originalPos;
+        return true;
+        
+        
     }
 };
 
@@ -248,6 +370,16 @@ public:
         for (auto node : charClass) {
             node.print(indent+2);
         }
+    }
+
+    bool match(std::string& str, int& pos) override {
+        if (pos >= str.size()) return false;
+        for (auto node : charClass) {
+            if (node.match(str, pos)) {
+                return true;
+            }
+        }
+        return false;
     }
 };
 class NegativeLookAheadAstNode : public AstNode {
@@ -270,6 +402,15 @@ public:
         std::cout << std::string(indent, ' ') << getLabel() << std::endl;
         if (left) left->print(indent + 2);
     }
+
+    bool match(std::string& str, int& pos) override {
+        throw std::runtime_error("Not implemented yet");
+        if (left->match(str, pos)) {
+            return false;
+        }
+        return true;
+    }
 };
 
-// ^a.*b+c?$
+
+// ^a*b+c?$

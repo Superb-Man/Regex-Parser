@@ -1,4 +1,6 @@
-#include "parseRegX.hpp"
+#pragma once
+#include "utils/parseRegX.hpp"
+#include"utils/NI_log.hpp"
 
 
 int main() {
@@ -37,9 +39,6 @@ int main() {
         std::cout << "Enter regex: ";
         std::getline(std::cin, regex);
         std::vector<Token> tokens = lexer(regex);
-        for (const auto& token : tokens) {
-            std::cout << token << std::endl; 
-        }
             
         ParseRegex parser(tokens);
         AstNode* ast = nullptr;

@@ -1,4 +1,10 @@
+#pragma once
 #include "nodes.hpp"
+
+
+// Forward declaration
+bool handleEXception(AstNode* curr,AstNode* left);
+void printRule(std::string rule);
 
 // all grammar
 // R -> U
@@ -7,33 +13,38 @@
 // K -> K * | K + | K ? | S
 // S -> ( R ) | ( ? ! R ) | [ LITERAL DASH LITERAL ] | LITERAL | . | ^ | $
 
-
-void printRule(std::string rule) {
-    std::cout << rule << std::endl;
-}
-
 class ParseRegex {
 private:
     std::vector<Token> tokenStream;
     int currToken;
+    std::vector<AstNode*> astNodes;
 
     AstNode* parse_R() {
         printRule("R -> U");
-        return parse_U();
+
+        AstNode* ast = parse_U();
+        astNodes.push_back(ast);
+
+        return ast;
     }
 
     AstNode* parse_U() {
         bool isU = false;
 
         AstNode* ast = parse_C();
+
         while (isMatch(OR)) {
             AstNode* left = ast;
             AstNode* right = parse_C();
             ast = new OrAstNode(left, right);
             isU = true;
+            astNodes.push_back(ast);
         }
 
         (isU) ? printRule("U -> U OR C") : printRule("U -> C");
+
+        astNodes.push_back(ast);
+
         return ast;
     }
 
@@ -41,6 +52,7 @@ private:
         bool isC = false;
 
         AstNode* ast = parse_K();
+
         while (currToken < tokenStream.size()) {
             int tokenType = tokenStream[currToken].index;
             if (tokenType == LITERAL || tokenType == OPEN_PAREN || tokenType == DOT || 
@@ -48,7 +60,6 @@ private:
                 AstNode* left = ast;
                 AstNode* right = parse_K();
                 ast = new SeqAstNode(left,right);
-                
                 isC = true;
             
             } else {
@@ -57,6 +68,8 @@ private:
         }
 
         (isC) ? printRule("C -> C K") : printRule("C -> K");
+
+        astNodes.push_back(ast);
 
         return ast;
     }
@@ -76,6 +89,10 @@ private:
                 else {
                     printRule("K -> K *");
                     ast = new StarAstNode(ast);
+                    StarAstNode* starNode = dynamic_cast<StarAstNode*>(ast);
+                    if (handleEXception(ast,starNode->left)) {
+                        throw std::runtime_error("In parse_K: Not expected token");
+                    }
                 }
             } else if (tokenType == PLUS) {
                 currToken++;
@@ -89,10 +106,19 @@ private:
                 else {
                     printRule("K -> K +");
                     ast = new PlusAstNode(ast);
+                    PlusAstNode* plusNode = dynamic_cast<PlusAstNode*>(ast);
+                    if (handleEXception(ast,plusNode->left)) {
+                        throw std::runtime_error("In parse_K: Not expected token");
+                    }
+
                 }
             } else if (tokenType == QUESTION) {
                 printRule("K -> K ?");
                 ast = new QuestionAstNode(ast);
+                QuestionAstNode* questionNode = dynamic_cast<QuestionAstNode*>(ast);
+                if (handleEXception(ast,questionNode->left)) {
+                    throw std::runtime_error("In parse_K: Not expected token");
+                }
                 currToken++;
             } 
             else {
@@ -101,17 +127,27 @@ private:
             }
         }
 
+        astNodes.push_back(ast);
+
         return ast;
     }
 
     AstNode* parse_S() {
+        AstNode* ast = nullptr;
+        
         if (isMatch(OPEN_PAREN)) {
-            if (isMatch(QUESTION) && isMatch(EXCLAMATION)) {
-                printRule("S -> ( ? ! R )");
-                AstNode* ast = parse_R();
-                check(CLOSED_PAREN);
-                return new NegativeLookAheadAstNode(ast);
-            } else {
+            if (isMatch(QUESTION)) {
+                if (isMatch(EXCLAMATION)) {
+                    printRule("S -> ( ? ! R )");
+                    AstNode* ast = parse_R();
+                    check(CLOSED_PAREN);
+                    return new NegativeLookAheadAstNode(ast);
+                    } else {
+                        throw std::runtime_error("In parse_S: Not expected token");
+                        exit(1);
+                    }
+            } 
+            else {
                 printRule("S -> ( R )");
                 AstNode* ast = parse_R();
                 check(CLOSED_PAREN);
@@ -226,4 +262,60 @@ public:
         }
         return ast;
     }
+    std::vector<AstNode*> getAstNodes() {
+        return astNodes;
+    }
 };
+
+
+bool handleEXception(AstNode* curr,AstNode* left) {
+    // if curr is star and left is star
+    if (StarAstNode* starNode = dynamic_cast<StarAstNode*>(curr)) {
+        if (StarAstNode* starNode = dynamic_cast<StarAstNode*>(left)) {
+            return true;
+        }
+    }
+    // if curr is star and left is plus
+    if (StarAstNode* starNode = dynamic_cast<StarAstNode*>(curr)) {
+        if (PlusAstNode* plusNode = dynamic_cast<PlusAstNode*>(left)) {
+            return true;
+        }
+    }
+    // if curr is star and left is question
+    if (StarAstNode* starNode = dynamic_cast<StarAstNode*>(curr)) {
+        if (QuestionAstNode* questionNode = dynamic_cast<QuestionAstNode*>(left)) {
+            return true;
+        }
+    }
+    // if curr is plus and left is star
+    if (PlusAstNode* plusNode = dynamic_cast<PlusAstNode*>(curr)) {
+        if (StarAstNode* starNode = dynamic_cast<StarAstNode*>(left)) {
+            return true;
+        }
+    }
+    // if curr is plus and left is plus
+    if (PlusAstNode* plusNode = dynamic_cast<PlusAstNode*>(curr)) {
+        if (PlusAstNode* plusNode = dynamic_cast<PlusAstNode*>(left)) {
+            return true;
+        }
+    }
+    // if curr is plus and left is question
+    if (PlusAstNode* plusNode = dynamic_cast<PlusAstNode*>(curr)) {
+        if (QuestionAstNode* questionNode = dynamic_cast<QuestionAstNode*>(left)) {
+            return true;
+        }
+    }
+    // if cur is question and left is question
+    if (QuestionAstNode* questionNode = dynamic_cast<QuestionAstNode*>(curr)) {
+        if (QuestionAstNode* questionNode = dynamic_cast<QuestionAstNode*>(left)) {
+            return true;
+        }
+    }
+
+    return false;
+
+}
+
+void printRule(std::string rule) {
+    std::cout << rule << std::endl;
+}
