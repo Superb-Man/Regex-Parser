@@ -27,7 +27,9 @@ int main() {
     // regex = "ad|(b|.c)*";
     // regex = "a.?b";
     regex = "a(a|bc)*(bc|b)";
+    // regex = "aaab";
     // regex = "a(ab)*?abc";
+    regex = "([0-9a-d.]|a*(b|(cd+|e*f)))bd";
     std::cout << regex << std::endl;
 
 
@@ -64,8 +66,13 @@ int main() {
         std::getline(std::cin, text);
         int pos = 0;
         ast->match(text,pos);
+        if (pos == text.size()) {
+            std::cout << "Matched completely" << std::endl;
+            
+        } else {
+            std::cout << "Not matched" << std::endl;
+        }
         std::cout << "Matched up to position = " << pos << std::endl;
-        pos = (pos >= text.size()) ? pos-1 : pos;
         std::cout << "Matched prefix: " << text.substr(0,pos) << std::endl;
     }
 }
