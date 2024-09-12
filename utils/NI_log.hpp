@@ -38,7 +38,7 @@ bool canSolve(std::vector<AstNode*> astNodes) {
             if (starPlusQuestion) {
                 AstNode* dotChar = STAR_PLUS__QUESTION_has_DOT_CHAR(starPlusQuestion);
                 if (dotChar) {
-                    std::cout << "DEBUG VUL PAISI" << std::endl;
+                    // std::cout << "DEBUG VUL PAISI" << std::endl;
                     return false;
                 }
             }
@@ -46,22 +46,21 @@ bool canSolve(std::vector<AstNode*> astNodes) {
 
         // if it a star or plus or question , ques node , check if the subtree has dot or character class
         if (StarAstNode* starNode = dynamic_cast<StarAstNode*>(node)) {
-            AstNode* dotChar = LEFT_OF_STAR_PLUS_QUESTION(starNode);
+            AstNode* dotChar = LEFT_OF_STAR_PLUS_QUESTION(starNode->left);
             if (dotChar) {
-                std::cout << "DEBUG VUL PAISI" << std::endl;
                 return false;
             }
         }
 
         if (PlusAstNode* plusNode = dynamic_cast<PlusAstNode*>(node)) {
-            AstNode* dotChar = LEFT_OF_STAR_PLUS_QUESTION(plusNode);
+            AstNode* dotChar = LEFT_OF_STAR_PLUS_QUESTION(plusNode->left);
             if (dotChar) {
                 return false;
             }
         }
 
         if (QuestionAstNode* questionNode = dynamic_cast<QuestionAstNode*>(node)) {
-            AstNode* dotChar = LEFT_OF_STAR_PLUS_QUESTION(questionNode);
+            AstNode* dotChar = LEFT_OF_STAR_PLUS_QUESTION(questionNode->left);
             if (dotChar) {
                 return false;
             }
