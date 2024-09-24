@@ -28,8 +28,13 @@ int main() {
     // regex = "a.?b";
     regex = "a(a|bc)*(bc|b)";
     // regex = "aaab";
-    // regex = "a(ab)*?abc";
-    regex = "([0-9a-d.]|a*(b|(cd+|e*f)))bd";
+    regex = "a(ab|cd?e)*abc";
+    // regex = "([0-9a-d.]|a*(b|(cd+|e*f)))bd";
+    // regex = "a.*b";
+    // regex = "a((.)*)bcd+(((c)d)e)";
+    // regex = "a.*b[0-9]+b+b*";
+    // regex = "a*a+";
+    regex = "[7-9ac-e]";
     std::cout << regex << std::endl;
 
 
@@ -65,14 +70,27 @@ int main() {
         std::cout << "Enter text: ";
         std::getline(std::cin, text);
         int pos = 0;
-        ast->match(text,pos);
-        if (pos == text.size()) {
+        int bpos = text.size() - 1;
+        bool l = ast->matchL(text,pos);
+        bool r = ast->matchR(text,bpos);
+        if ((pos == text.size() && l) || (bpos == -1 && r)) {
             std::cout << "Matched completely" << std::endl;
-            
-        } else {
+            if (pos == text.size()) {
+                std::cout << "prefix matched :" << text.substr(0,pos) << std::endl;
+            } 
+            else {
+                std::cout << "suffix matched :" << text.substr(bpos+1) << std::endl;
+            }
+
+        } 
+        else {
             std::cout << "Not matched" << std::endl;
         }
-        std::cout << "Matched up to position = " << pos << std::endl;
-        std::cout << "Matched prefix: " << text.substr(0,pos) << std::endl;
+        // if ((pos == text.size() && bpos == -1)) {
+        //     std::cout << "Matched completely" << std::endl;
+
+        // } else {
+        //     std::cout << "Not matched" << std::endl;
+        // }
     }
 }

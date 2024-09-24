@@ -21,8 +21,6 @@ class QuestionAstNode;
 class CharacterClassAstNode;
 class NegativeLookAheadAstNode;
 
-//functions
-bool tryMatch(AstNode* node, std::string& str, int& pos);
 
 
 
@@ -32,7 +30,8 @@ public:
     virtual std::string getLabel() const = 0;
     virtual void print(int indent = 0) const = 0;
 
-    virtual bool match(std::string& str, int& pos) = 0;
+    virtual bool matchL(std::string& str, int& pos) = 0;
+    virtual bool matchR(std::string& str, int& pos) = 0;
 };
 
 class OrAstNode : public AstNode {
@@ -60,14 +59,21 @@ public:
         if (right) right->print(indent + 2);
     }
 
-    bool match(std::string& str, int& pos) override {
-        if (left->match(str, pos)) {
+    bool matchL(std::string& str, int& pos) override {
+        if (left->matchL(str, pos)) {
             return true;
         }
         
-        return right->match(str, pos);
+        return right->matchL(str, pos);
     }
     
+    bool matchR(std::string& str, int& pos) override {
+        if (right->matchR(str, pos)) {
+            return true;
+        }
+        
+        return left->matchR(str, pos);
+    }
 };
 
 class SeqAstNode : public AstNode {
@@ -95,8 +101,15 @@ public:
         if (right) right->print(indent + 2);
     }
 
-    bool match(std::string& str, int& pos) override {
-        if (left->match(str, pos) && right->match(str, pos)) {
+    bool matchL(std::string& str, int& pos) override {
+        if (left->matchL(str, pos) && right->matchL(str, pos)) {
+            return true;
+        }  
+        return false;
+    }
+
+    bool matchR(std::string& str, int& pos) override {
+        if (right->matchR(str, pos) && left->matchR(str, pos)) {
             return true;
         }  
         return false;
@@ -124,10 +137,23 @@ public:
         if (left) left->print(indent + 2);
     }
 
-    bool match(std::string& str, int& pos) override {
+    bool matchL(std::string& str, int& pos) override {
         int originalPos = pos;
         while (true) {
-            if (!left->match(str, pos)) {
+            if (!left->matchL(str, pos)) {
+                break;
+            }
+            originalPos = pos;
+        }
+        pos = originalPos;
+
+        return true;
+    }
+
+    bool matchR(std::string& str, int& pos) override {
+        int originalPos = pos;
+        while (true) {
+            if (!left->matchR(str, pos)) {
                 break;
             }
             originalPos = pos;
@@ -159,7 +185,12 @@ public:
         if (left) left->print(indent + 2);
     }
 
-    bool match(std::string& str, int& pos) override {
+    bool matchL(std::string& str, int& pos) override {
+        //NOT IMPLEMENTED YET
+        return true;
+    }
+
+    bool matchR(std::string& str, int& pos) override {
         //NOT IMPLEMENTED YET
         return true;
     }
@@ -192,13 +223,29 @@ public:
         if (left) left->print(indent + 2);
     }
 
-    bool match(std::string& str, int& pos) override {
-        if (!left->match(str, pos)) {
+    bool matchL(std::string& str, int& pos) override {
+        if (!left->matchL(str, pos)) {
             return false;
         }
         int originalPos = pos;
         while (true) {
-            if (!left->match(str, pos)) {
+            if (!left->matchL(str, pos)) {
+                break;
+            }
+            originalPos = pos;
+        }
+        pos = originalPos;
+
+        return true;
+    }
+
+    bool matchR(std::string& str, int& pos) override {
+        if (!left->matchR(str, pos)) {
+            return false;
+        }
+        int originalPos = pos;
+        while (true) {
+            if (!left->matchR(str, pos)) {
                 break;
             }
             originalPos = pos;
@@ -231,7 +278,12 @@ public:
         if (left) left->print(indent + 2);
     }
 
-    bool match(std::string& str, int& pos) override { 
+    bool matchL(std::string& str, int& pos) override { 
+        //NOT IMPLEMENTED YET
+        return true;
+    }
+
+    bool matchR(std::string& str, int& pos) override {
         //NOT IMPLEMENTED YET
         return true;
     }
@@ -258,10 +310,19 @@ public:
         return std::string(1,ch) < std::string(1,other.ch);
     }
 
-    bool match(std::string& str, int& pos) override {
+    bool matchL(std::string& str, int& pos) override {
         if (pos >= str.size()) return false;
         if (str[pos] == ch) {
             pos++;
+            return true;
+        }
+        return false;
+    }
+
+    bool matchR(std::string& str, int& pos) override {
+        if (pos <= -1) return false;
+        if (str[pos] == ch) {
+            pos--;
             return true;
         }
         return false;
@@ -278,11 +339,21 @@ public:
         std::cout << std::string(indent, ' ') << getLabel() << std::endl;
     }
 
-    bool match(std::string& str, int& pos) override {
+    bool matchL(std::string& str, int& pos) override {
         // Match any character except newline
         if (pos >= str.size()) return false;
         if (str[pos] != '\n') {
             pos++;
+            return true;
+        }
+        return false;
+    }
+
+    bool matchR(std::string& str, int& pos) override {
+        // Match any character except newline
+        if (pos <= -1) return false;
+        if (str[pos] != '\n') {
+            pos--;
             return true;
         }
         return false;
@@ -299,8 +370,12 @@ public:
         std::cout << std::string(indent, ' ') << getLabel() << std::endl;
     }
 
-    bool match(std::string& str, int& pos) override {
+    bool matchL(std::string& str, int& pos) override {
         return pos == 0;
+    }
+
+    bool matchR(std::string& str, int& pos) override {
+        return matchL(str, pos);
     }
 };
 
@@ -314,8 +389,12 @@ public:
         std::cout << std::string(indent, ' ') << getLabel() << std::endl;
     }
 
-    bool match(std::string& str, int& pos) override {
+    bool matchL(std::string& str, int& pos) override {
         return pos == str.size() ;
+    }
+
+    bool matchR(std::string& str, int& pos) override {
+        return matchL(str, pos);
     }
 };
 
@@ -340,16 +419,24 @@ public:
         if (left) left->print(indent + 2);
     }
 
-    bool match(std::string& str, int& pos) override {
-        // only match atmost one time
+    bool matchL(std::string& str, int& pos) override {
+        // only matchL atmost one time
         int originalPos = pos;
-        if (left->match(str, pos)) {
+        if (left->matchL(str, pos)) {
             return true;
         }
         pos = originalPos;
         return true;
-        
-        
+    }
+
+    bool matchR(std::string& str, int& pos) override {
+        // only matchR atmost one time
+        int originalPos = pos;
+        if (left->matchR(str, pos)) {
+            return true;
+        }
+        pos = originalPos;
+        return true;
     }
 };
 
@@ -372,10 +459,20 @@ public:
         }
     }
 
-    bool match(std::string& str, int& pos) override {
+    bool matchL(std::string& str, int& pos) override {
         if (pos >= str.size()) return false;
         for (auto node : charClass) {
-            if (node.match(str, pos)) {
+            if (node.matchL(str, pos)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool matchR(std::string& str, int& pos) override {
+        if (pos <= -1) return false;
+        for (auto node : charClass) {
+            if (node.matchR(str, pos)) {
                 return true;
             }
         }
@@ -403,9 +500,17 @@ public:
         if (left) left->print(indent + 2);
     }
 
-    bool match(std::string& str, int& pos) override {
+    bool matchL(std::string& str, int& pos) override {
         throw std::runtime_error("Not implemented yet");
-        if (left->match(str, pos)) {
+        if (left->matchL(str, pos)) {
+            return false;
+        }
+        return true;
+    }
+
+    bool matchR(std::string& str, int& pos) override {
+        throw std::runtime_error("Not implemented yet");
+        if (left->matchR(str, pos)) {
             return false;
         }
         return true;
