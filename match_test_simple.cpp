@@ -1,6 +1,7 @@
 #pragma once
 #include "utils/parseRegX.hpp"
 #include"utils/NI_log.hpp"
+#include "utils/Simplifier.hpp"
 
 
 
@@ -32,9 +33,9 @@ int main() {
     // regex = "([0-9a-d.]|a*(b|(cd+|e*f)))bd";
     // regex = "a.*b";
     // regex = "a((.)*)bcd+(((c)d)e)";
-    // regex = "a.*b[0-9]+b+b*";
+    regex = "a.*b[0-9]+b+b*";
     // regex = "a*a+";
-    regex = "[7-9ac-e]";
+    // regex = "[7-9ac-e]";
     std::cout << regex << std::endl;
 
 
@@ -52,6 +53,15 @@ int main() {
     try {
         ast = parser.parse();
         ast->print();
+        // simply regex
+        std::cout << "Simplified regex: ";
+        regex = Simplifier(ast).simplifiedRegex;
+        std::cout << regex << std::endl;
+
+        // again parse the simplified regex
+        tokens = lexer(regex);
+        parser = ParseRegex(tokens);
+        ast = parser.parse();
         std::cout << std::endl;
     } catch (const std::exception& e) {
         std::cout << e.what() << std::endl;

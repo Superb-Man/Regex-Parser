@@ -80,31 +80,42 @@ struct Simplifier {
             char prevChar = '\0';
             int prevIdx = 0;
             std::string temp = "";
+            int cur = simplifiedRegex.size();
             
             for (auto litNode : charNode->charClass) {
                 char currentChar = litNode.ch;
                 temp += currentChar;
-                
+                // std::cout << "Current char: " << currentChar << std::endl;
+                // std::cout << "Prev char: " << prevChar << std::endl;
                 if (prevChar != '\0' && prevChar + 1 == currentChar) {
                     prevChar = currentChar;
                     prevIdx++;
                 } 
                 else {
                     if (prevIdx > 0) {
-                        simplifiedRegex += temp[0];
+                        if (temp[0] != simplifiedRegex[cur - 1]) {
+                            simplifiedRegex += temp[0];
+                            cur++;
+                        }
                         simplifiedRegex += '-';
                         simplifiedRegex += temp[prevIdx];
+                        cur += 2;
                     } 
                     else if (!temp.empty()) {
                         simplifiedRegex += temp[0];
+                        cur++;
                     }
                     temp = currentChar;
                     prevChar = currentChar;
                     prevIdx = 0;
                 }
+                // std::cout << "Simplified regex : " << simplifiedRegex << std::endl;;
             }
             if (prevIdx > 0) {
-                simplifiedRegex += temp[0];
+                if (temp[0] != simplifiedRegex[cur - 1]) {
+                    simplifiedRegex += temp[0];
+                    cur++;
+                }
                 simplifiedRegex += '-';
                 simplifiedRegex += temp[prevIdx];
             } 
