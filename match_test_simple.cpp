@@ -34,7 +34,7 @@ int main() {
     // regex = "a.*b";
     // regex = "a((.)*)bcd+(((c)d)e)";
     regex = "a.*b[0-9]+b+b*";
-    // regex = "a*a+";
+    regex = "a(..)*d";
     // regex = "[7-9ac-e]";
     std::cout << regex << std::endl;
 
@@ -52,7 +52,7 @@ int main() {
 
     try {
         ast = parser.parse();
-        ast->print();
+        // ast->print();
         // simply regex
         std::cout << "Simplified regex: ";
         regex = Simplifier(ast).simplifiedRegex;
@@ -104,3 +104,5 @@ int main() {
         // }
     }
 }
+
+// ajsfbvudjfvbjbbbbcddddddf

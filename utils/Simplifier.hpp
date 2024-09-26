@@ -136,6 +136,7 @@ struct Simplifier {
     }
 
     std::string simplifyRepeated(const std::string regex) {
+        // std::cout << regex << std::endl;
         simplifiedRegex="";
         int n = regex.size() ;
         char lastChar = regex[0];  
@@ -171,7 +172,7 @@ struct Simplifier {
                 simplifiedRegex += (found == 1 ? "*" : (found == 2 ? "+" : ""));
 
                 if (i + 1 < n && isSP(regex[i + 1])) {
-                    found = std::max(found, regex[i + 1] == '*' ? 1 : 2);
+                    found = (regex[i + 1] == '*' ? 1 : 2);
                     lastChar = regex[i];
                     repeatCount = 0;
                     i++;
