@@ -21,6 +21,14 @@ AstNode* generateTree(std::string regex) {
     }
 }
 
+int openingBracketPos(std::string text, int pos) {
+    for (int i = pos; i >= 0; i--) {
+        if (text[i] == '[') return i;
+    }
+
+    return -1;
+}
+
 struct Splitter {
     std::string regex;
     std::vector<std::pair<AstNode*, std::string>> roots;
@@ -38,9 +46,32 @@ struct Splitter {
      */
     void split() {
         std::string temp = "";
+        int startingBracket = -1;
         for (int i = 0 ; i < regex.size(); i++) {
+            //for [....]* or [....]+
+            if (regex[i] == '[') {
+                startingBracket = i;
+                while (i < regex.size() && regex[i] != ']') {
+                    i++;
+                }
+                if (i + 1 < regex.size() && regex[i+1] == '*') {
+                    if (temp.size())    roots.push_back({generateTree(temp), temp});
+                    roots.push_back({generateTree(regex.substr(startingBracket, i +1 - startingBracket + 1)), regex.substr(startingBracket, i+1 - startingBracket + 1)});
+                    i++;
+                    temp = "";
+                }
+                else if (i + 1 < regex.size() && regex[i+1] == '+') {
+                    if (temp.size())    roots.push_back({generateTree(temp), temp});
+                    roots.push_back({generateTree(regex.substr(startingBracket, i +1 - startingBracket + 1)), regex.substr(startingBracket, i+1 - startingBracket + 1)});
+                    i++;
+                    temp = "";
+                }
+                else {
+                    temp += regex.substr(startingBracket, i - startingBracket + 1);
+                }
+            }
             //for .*
-            if (i +1 < regex.size() && regex[i] == '.' && regex[i+1] == '*') {
+            else if (i +1 < regex.size() && regex[i] == '.' && regex[i+1] == '*') {
                 if (temp.size())    roots.push_back({generateTree(temp), temp});
                 roots.push_back({generateTree(".*"), ".*"});
                 i++;
@@ -61,7 +92,7 @@ struct Splitter {
             roots.push_back({generateTree(temp), temp});
         }
 
-        // std::cout << "Roots size: " << roots.size() << std::endl;
+        std::cout << "Roots size: " << roots.size() << std::endl;
     }
 
     bool match(std::string text) {
@@ -69,6 +100,8 @@ struct Splitter {
 
         int pos = 0;
         int visited = 0;
+        int checkerStart = -1;
+        int checkerEnd = -1;
 
         for (int i = 0; i < roots.size() ; i++) {
             visited++;
@@ -76,6 +109,17 @@ struct Splitter {
             // std::cout << "root: " << roots[i].second << std::endl;
             if (roots[i].second == ".*") continue;
             if (roots[i].second == ".+") {
+                pos++;
+                continue;
+            }
+            // if it contains [....]*
+            if (roots[i].second[roots[i].second.size() - 1] == '*' && roots[i].second[roots[i].second.size() - 2] == ']') {
+                checkerStart = pos;
+                // std::cout << "checkerStart: " << checkerStart << std::endl;
+                continue;
+            }
+            if (roots[i].second[roots[i].second.size() - 1] == '*' && roots[i].second[roots[i].second.size() - 2] == ']') {
+                checkerStart = pos;
                 pos++;
                 continue;
             }
@@ -89,22 +133,47 @@ struct Splitter {
             if (i == roots.size() - 1 && roots.size() > 1) {
                 pos = text.size() - 1; 
                 if (!roots[i].first->matchR(text, pos)) return false;
-                // std::cout << "pos: " << pos << std::endl;
+
+                // for []+ and []*;
+                if (i-1 >= 0 && (roots[i-1].second[roots[i-1].second.size() - 1] == '*' || roots[i-1].second[roots[i-1].second.size() - 1] == '+') && roots[i-1].second[roots[i-1].second.size() - 2] == ']') {
+                    checkerEnd = pos;
+                    // std::cout << "checkerStart: " << checkerStart << " checkerEnd: " << checkerEnd << std::endl;
+                    if (checkerStart != -1 && checkerEnd != -1) {
+                        std::string temp = text.substr(checkerStart, checkerEnd - checkerStart + 1);
+                        // std::cout <<"temp: " << temp << std::endl;
+                        // std::cout << "temp: " << temp << std::endl;
+                        // roots[i-1].first->print();
+                        if (i -1 >= 0 && !roots[i-1].first->matchL(temp, checkerStart) || checkerStart != checkerEnd) return false;
+                    }
+                }
+
                 continue;
             }
 
             bool t = false;
-            std::cout << pos << std::endl;
+            // std::cout << pos << std::endl;
             for (int j = pos; j < text.size(); j++) {
                 t = roots[i].first->matchL(text, j);
+                checkerEnd = j - 1;
                 if (t) {
-                    // std::cout << "pos: " << j << std::endl;
+                    std::cout << "pos: " << j << std::endl;
                     pos = j;
                     break;
                 }
             }
 
             if (!t) return false;
+
+            // for []+ and []*;
+            // make substring from checkerStart to pos if checkerStart != -1
+            std::cout << "checkerStart: " << checkerStart << " checkerEnd: " << checkerEnd << std::endl;
+            if (checkerStart != -1 && checkerEnd != -1) {
+                std::string temp = text.substr(checkerStart, checkerEnd - checkerStart + 1);
+                std::cout <<"temp: " << temp << std::endl;
+                // std::cout << "temp: " << temp << std::endl;
+                if (i -1 >= 0 && !roots[i-1].first->matchL(temp, checkerStart) || checkerStart != checkerEnd) return false;
+            }
+
             // std::cout << "total visited: " << visited << std::endl;
             // std::cout << "pos: " << pos << std::endl;
 
@@ -115,6 +184,12 @@ struct Splitter {
             if (pos == text.size()) return true;
             if (roots[0].second == ".*") return true;
             if (roots[0].second == ".+" && text.size() > 1) return true;
+            if (roots[0].second[roots[0].second.size() - 1] == '*' && roots[0].second[roots[0].second.size() - 2] == ']') {
+                return roots[0].first->matchL(text, pos);
+            }
+            if (roots[0].second[roots[0].second.size() - 1] == '+' && roots[0].second[roots[0].second.size() - 2] == ']' && text.size() > 1) {
+                return roots[0].first->matchL(text, pos);
+            }
             return false ;
         }
 

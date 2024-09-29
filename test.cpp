@@ -37,7 +37,9 @@ int main() {
     regex = "ab*b?c+.*f";
     regex = "a?ab";
     regex = "a*";
-    regex = "a*b*c*";
+    regex = "a*[dzf]*dfb*";
+    regex = "[a-c]+";
+    // regex = "a+";
     std::cout << regex << std::endl;
 
     Splitter splitter(regex);

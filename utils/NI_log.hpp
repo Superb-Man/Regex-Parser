@@ -119,9 +119,9 @@ AstNode* LEFT_OF_STAR_PLUS_QUESTION(AstNode* node, int check) {
         if (DotAstNode* dotNode = dynamic_cast<DotAstNode*>(node)) {
             return dotNode;
         }
-    }
-    if (CharacterClassAstNode* charNode = dynamic_cast<CharacterClassAstNode*>(node)) {
-        return charNode;
+        if (CharacterClassAstNode* charNode = dynamic_cast<CharacterClassAstNode*>(node)) {
+            return charNode;
+        }
     }
     return nullptr;
 }
