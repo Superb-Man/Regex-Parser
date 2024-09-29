@@ -33,6 +33,11 @@ int main() {
     regex = "a.*b*cd+.*f";
     // regex = "a(.bc)*d";
     regex = "a*b*.*g*.+";
+    regex = "abcd+.*f";
+    regex = "ab*b?c+.*f";
+    regex = "a?ab";
+    regex = "a*";
+    regex = "a*b*c*";
     std::cout << regex << std::endl;
 
     Splitter splitter(regex);
@@ -45,8 +50,11 @@ int main() {
         if (text == "exit") {
             return 0;
         }
-        if (splitter.match(text)) {
-            std::cout << "Matched" << std::endl;
+        std::pair<std::string, bool> result = splitter.matchedString(text);
+
+        if (result.second) {
+            std::cout << "Matched up to pos " << result.first.size() << std::endl;
+            std::cout << "Matched string: " << result.first << std::endl;
         } else {
             std::cout << "Not matched" << std::endl;
         }

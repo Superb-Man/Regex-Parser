@@ -12,7 +12,7 @@ struct Simplifier {
     }
 
     bool isSP(char c) {
-        return c == '*' || c == '+' ;
+        return c == '*' || c == '+' || c == '?';
     }
 
     /**
@@ -68,6 +68,19 @@ struct Simplifier {
             else {
                 simplify(plusNode->left);
                 simplifiedRegex += "+";
+            }
+        }
+
+        if (QuestionAstNode* questionNode = dynamic_cast<QuestionAstNode*>(node)) {
+            if (SeqAstNode* seqNode = dynamic_cast<SeqAstNode*>(questionNode->left)) {
+                simplifiedRegex += "(";
+                simplify(seqNode->left);
+                simplify(seqNode->right);
+                simplifiedRegex += ")?";
+            } 
+            else {
+                simplify(questionNode->left);
+                simplifiedRegex += "?";
             }
         }
 
@@ -143,15 +156,16 @@ struct Simplifier {
         int repeatCount = 1;
         int found = 0;
 
-        // dound = 0 // no star,plus
-        // found = 1 // star
-        // found = 2 // plus
+        // found = 0 // no star,plus,question
+        // found = 1 // question
+        // found = 2 // star
+        // found = 3 // plus
         // will give precedence to plus
 
         for (int i = 0 ; i < n ; i ++) {
             if (i == 0) {
                 if (i + 1 < n && isSP(regex[i + 1])) {
-                    found = std::max(found, regex[i + 1] == '*' ? 1 : 2);
+                    found = std::max(found, (regex[i + 1] == '*' ? 2 : (regex[i + 1] == '+' ? 3 : 1)));
                     i++;
                     repeatCount--;
                 }
@@ -162,17 +176,18 @@ struct Simplifier {
                 repeatCount++;
                 if (i + 1 < n && isSP(regex[i + 1])) {
                     repeatCount--;
-                    found = std::max(found, regex[i + 1] == '*' ? 1 : 2);
+                    found = std::max(found, (regex[i + 1] == '*' ? 2 : (regex[i + 1] == '+' ? 3 : 1)));
                     i++;
                 }
             }
             else {
                 if (found) repeatCount++;
                 simplifiedRegex += std::string(repeatCount, lastChar);
-                simplifiedRegex += (found == 1 ? "*" : (found == 2 ? "+" : ""));
+                simplifiedRegex += (found == 1 ? "?" : (found == 2 ? "*" : (found == 3 ? "+" : "")));
+
 
                 if (i + 1 < n && isSP(regex[i + 1])) {
-                    found = (regex[i + 1] == '*' ? 1 : 2);
+                    found = (regex[i + 1] == '*' ? 2 : regex[i + 1] == '+' ? 3 : 1);
                     lastChar = regex[i];
                     repeatCount = 0;
                     i++;
@@ -190,7 +205,7 @@ struct Simplifier {
         // extra case for last char
         if (found) repeatCount++;
         simplifiedRegex += std::string(repeatCount, lastChar);
-        simplifiedRegex += (found == 1 ? "*" : (found == 2 ? "+" : ""));
+        simplifiedRegex += (found == 1 ? "?" : (found == 2 ? "*" : (found == 3 ? "+" : "")));
 
 
         return simplifiedRegex;

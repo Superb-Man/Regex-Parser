@@ -7,7 +7,14 @@ AstNode* generateTree(std::string regex) {
     ParseRegex parser(tokens);
 
     try {
-        return parser.parse();
+        AstNode* ast = parser.parse();
+        bool flag = canSolve(parser.getAstNodes());
+        if (!flag) { 
+            std::cout << "NOT YET IMPLEMENTED" << std::endl;
+            exit(-1);
+        }
+
+        return ast;
     } catch (const std::exception& e) {
         e.what();
         return nullptr;
@@ -54,19 +61,19 @@ struct Splitter {
             roots.push_back({generateTree(temp), temp});
         }
 
-        std::cout << "Roots size: " << roots.size() << std::endl;
+        // std::cout << "Roots size: " << roots.size() << std::endl;
     }
 
     bool match(std::string text) {
-        std::cout << "text size: " << text.size() << std::endl;
+        // std::cout << "text size: " << text.size() << std::endl;
 
         int pos = 0;
         int visited = 0;
 
         for (int i = 0; i < roots.size() ; i++) {
             visited++;
-            std::cout << "root index: " << i << " ";
-            std::cout << "root: " << roots[i].second << std::endl;
+            // std::cout << "root index: " << i << " ";
+            // std::cout << "root: " << roots[i].second << std::endl;
             if (roots[i].second == ".*") continue;
             if (roots[i].second == ".+") {
                 pos++;
@@ -75,7 +82,7 @@ struct Splitter {
 
             if (i == 0) {
                 if (!roots[i].first->matchL(text, pos)) return false;
-                pos = 0;
+                // pos = 0;
                 continue;
             }
 
@@ -98,8 +105,8 @@ struct Splitter {
             }
 
             if (!t) return false;
-            std::cout << "total visited: " << visited << std::endl;
-            std::cout << "pos: " << pos << std::endl;
+            // std::cout << "total visited: " << visited << std::endl;
+            // std::cout << "pos: " << pos << std::endl;
 
         }
         // std::cout << "pos: " << pos << std::endl;
@@ -114,6 +121,21 @@ struct Splitter {
         return true;
 
 
+    }
+
+    std::pair<std::string,bool> matchedString(std::string text) {
+        if (match(text)) {
+            return {text, true};
+        }
+        // check for all strings from 0 to i
+        for (int i = text.size() - 2; i >= 0; i--) {
+            if (match(text.substr(0, i+1))) {
+
+                return {text.substr(0, i+1), true};
+            }
+        }
+
+        return {"", false};
     }
 
 

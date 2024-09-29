@@ -19,7 +19,7 @@
 #include"parseRegX.hpp"
 #include"nodes.hpp"
 //forward declaration
-AstNode* LEFT_OF_STAR_PLUS_QUESTION(AstNode* node);
+AstNode* LEFT_OF_STAR_PLUS_QUESTION(AstNode* node,int check);
 AstNode* OR_has_STAR_PLUS_QUESTION(AstNode* node);
 AstNode* OR_has_DOT_CHAR(AstNode* node);
 AstNode* STAR_PLUS__QUESTION_has_DOT_CHAR(AstNode* node);
@@ -45,22 +45,25 @@ bool canSolve(std::vector<AstNode*> astNodes) {
         }
 
         // if it a star or plus or question , ques node , check if the subtree has dot or character class
+        // handled case !!
+
+
         if (StarAstNode* starNode = dynamic_cast<StarAstNode*>(node)) {
-            AstNode* dotChar = LEFT_OF_STAR_PLUS_QUESTION(starNode->left);
+            AstNode* dotChar = LEFT_OF_STAR_PLUS_QUESTION(starNode->left,1);
             if (dotChar) {
                 return false;
             }
         }
 
         if (PlusAstNode* plusNode = dynamic_cast<PlusAstNode*>(node)) {
-            AstNode* dotChar = LEFT_OF_STAR_PLUS_QUESTION(plusNode->left);
+            AstNode* dotChar = LEFT_OF_STAR_PLUS_QUESTION(plusNode->left,1);
             if (dotChar) {
                 return false;
             }
         }
 
         if (QuestionAstNode* questionNode = dynamic_cast<QuestionAstNode*>(node)) {
-            AstNode* dotChar = LEFT_OF_STAR_PLUS_QUESTION(questionNode->left);
+            AstNode* dotChar = LEFT_OF_STAR_PLUS_QUESTION(questionNode->left,2);
             if (dotChar) {
                 return false;
             }
@@ -111,9 +114,11 @@ bool canSolve(std::vector<AstNode*> astNodes) {
     return true;
 }
 
-AstNode* LEFT_OF_STAR_PLUS_QUESTION(AstNode* node) {
-    if (DotAstNode* dotNode = dynamic_cast<DotAstNode*>(node)) {
-        return dotNode;
+AstNode* LEFT_OF_STAR_PLUS_QUESTION(AstNode* node, int check) {
+    if(check == 2) {
+        if (DotAstNode* dotNode = dynamic_cast<DotAstNode*>(node)) {
+            return dotNode;
+        }
     }
     if (CharacterClassAstNode* charNode = dynamic_cast<CharacterClassAstNode*>(node)) {
         return charNode;
