@@ -115,8 +115,12 @@ struct Simplifier {
                         cur += 2;
                     } 
                     else if (!temp.empty()) {
-                        simplifiedRegex += temp[0];
-                        cur++;
+                        if (temp[0] != simplifiedRegex[cur - 1]) {
+                            simplifiedRegex += temp[0];
+                            cur++;
+                        }
+                        // simplifiedRegex += temp[0];
+                        // cur++;
                     }
                     temp = currentChar;
                     prevChar = currentChar;

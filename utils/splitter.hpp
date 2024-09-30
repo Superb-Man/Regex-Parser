@@ -92,7 +92,7 @@ struct Splitter {
             roots.push_back({generateTree(temp), temp});
         }
 
-        std::cout << "Roots size: " << roots.size() << std::endl;
+        // std::cout << "Roots size: " << roots.size() << std::endl;
     }
 
     bool match(std::string text) {
@@ -136,14 +136,17 @@ struct Splitter {
 
                 // for []+ and []*;
                 if (i-1 >= 0 && (roots[i-1].second[roots[i-1].second.size() - 1] == '*' || roots[i-1].second[roots[i-1].second.size() - 1] == '+') && roots[i-1].second[roots[i-1].second.size() - 2] == ']') {
-                    checkerEnd = pos;
+                    checkerEnd = pos ;
                     // std::cout << "checkerStart: " << checkerStart << " checkerEnd: " << checkerEnd << std::endl;
                     if (checkerStart != -1 && checkerEnd != -1) {
                         std::string temp = text.substr(checkerStart, checkerEnd - checkerStart + 1);
-                        // std::cout <<"temp: " << temp << std::endl;
-                        // std::cout << "temp: " << temp << std::endl;
+                        // std::cout << "Temp is : " << temp << std::endl;
                         // roots[i-1].first->print();
-                        if (i -1 >= 0 && !roots[i-1].first->matchL(temp, checkerStart) || checkerStart != checkerEnd) return false;
+                        checkerStart = 0;
+                        if (i -1 >= 0 && (!roots[i-1].first->matchL(temp, checkerStart) || checkerStart != temp.size())) {
+                            // std::cout << "checkerStart: " << checkerStart << " checkerEnd: " << checkerEnd << std::endl;
+                            return false ;
+                        }
                     }
                 }
 
@@ -153,10 +156,10 @@ struct Splitter {
             bool t = false;
             // std::cout << pos << std::endl;
             for (int j = pos; j < text.size(); j++) {
+                checkerEnd = j - 1 ;
                 t = roots[i].first->matchL(text, j);
-                checkerEnd = j - 1;
                 if (t) {
-                    std::cout << "pos: " << j << std::endl;
+                    // std::cout << "pos: " << j << std::endl;
                     pos = j;
                     break;
                 }
@@ -166,12 +169,12 @@ struct Splitter {
 
             // for []+ and []*;
             // make substring from checkerStart to pos if checkerStart != -1
-            std::cout << "checkerStart: " << checkerStart << " checkerEnd: " << checkerEnd << std::endl;
+            // std::cout << "checkerStart: " << checkerStart << " checkerEnd: " << checkerEnd << std::endl;
             if (checkerStart != -1 && checkerEnd != -1) {
                 std::string temp = text.substr(checkerStart, checkerEnd - checkerStart + 1);
-                std::cout <<"temp: " << temp << std::endl;
                 // std::cout << "temp: " << temp << std::endl;
-                if (i -1 >= 0 && !roots[i-1].first->matchL(temp, checkerStart) || checkerStart != checkerEnd) return false;
+                checkerStart = 0; 
+                if (i -1 >= 0 && (!roots[i-1].first->matchL(temp, checkerStart) || checkerStart != temp.size())) return false;
             }
 
             // std::cout << "total visited: " << visited << std::endl;

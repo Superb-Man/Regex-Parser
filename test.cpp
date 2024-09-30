@@ -40,6 +40,7 @@ int main() {
     regex = "a*[dzf]*dfb*";
     regex = "[a-c]+";
     // regex = "a+";
+    regex = ".*a+[s-v0-5]*bcd+e(a|b)*";
     std::cout << regex << std::endl;
 
     Splitter splitter(regex);
