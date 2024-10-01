@@ -21,17 +21,21 @@ AstNode* generateTree(std::string regex) {
     }
 }
 
-int openingBracketPos(std::string text, int pos) {
-    for (int i = pos; i >= 0; i--) {
-        if (text[i] == '[') return i;
-    }
 
-    return -1;
-}
 
 struct Splitter {
     std::string regex;
     std::vector<std::pair<AstNode*, std::string>> roots;
+
+    bool checkNode(AstNode* node, std::string text, int checkerStart, int checkerEnd) {
+        std::string temp = text.substr(checkerStart, checkerEnd - checkerStart + 1);
+        // std::cout << "temp: " << temp << std::endl;
+        checkerStart = 0; 
+        if (node->matchL(temp, checkerStart) || checkerStart != temp.size()) return false;
+
+        return true;
+
+    }
 
     // .* handle
     
@@ -139,14 +143,11 @@ struct Splitter {
                     checkerEnd = pos ;
                     // std::cout << "checkerStart: " << checkerStart << " checkerEnd: " << checkerEnd << std::endl;
                     if (checkerStart != -1 && checkerEnd != -1) {
-                        std::string temp = text.substr(checkerStart, checkerEnd - checkerStart + 1);
-                        // std::cout << "Temp is : " << temp << std::endl;
-                        // roots[i-1].first->print();
-                        checkerStart = 0;
-                        if (i -1 >= 0 && (!roots[i-1].first->matchL(temp, checkerStart) || checkerStart != temp.size())) {
-                            // std::cout << "checkerStart: " << checkerStart << " checkerEnd: " << checkerEnd << std::endl;
-                            return false ;
+                        if (checkNode(roots[i-1].first, text, checkerStart, checkerEnd)) {
+                            return false;
                         }
+                        checkerStart = -1;
+                        checkerEnd = -1;
                     }
                 }
 
@@ -171,10 +172,11 @@ struct Splitter {
             // make substring from checkerStart to pos if checkerStart != -1
             // std::cout << "checkerStart: " << checkerStart << " checkerEnd: " << checkerEnd << std::endl;
             if (checkerStart != -1 && checkerEnd != -1) {
-                std::string temp = text.substr(checkerStart, checkerEnd - checkerStart + 1);
-                // std::cout << "temp: " << temp << std::endl;
-                checkerStart = 0; 
-                if (i -1 >= 0 && (!roots[i-1].first->matchL(temp, checkerStart) || checkerStart != temp.size())) return false;
+                if (i - 1 >= 0 && checkNode(roots[i-1].first, text, checkerStart, checkerEnd)) {
+                    return false;
+                }
+                checkerStart = -1;
+                checkerEnd = -1;
             }
 
             // std::cout << "total visited: " << visited << std::endl;
