@@ -24,6 +24,7 @@ AstNode* OR_has_STAR_PLUS_QUESTION(AstNode* node);
 AstNode* OR_has_DOT_CHAR(AstNode* node);
 AstNode* STAR_PLUS__QUESTION_has_DOT_CHAR(AstNode* node);
 AstNode* STAR_PLUS__QUESTION_has_OR(AstNode* node);
+AstNode* OR_HAS_STAR_PLUS_QUESTION_AS_CHILD(AstNode* node);
 
 bool canSolve(std::vector<AstNode*> astNodes) {
     // std::cout << "AST NODES SIZE : " << astNodes.size() << std::endl;
@@ -31,9 +32,11 @@ bool canSolve(std::vector<AstNode*> astNodes) {
         return false;
     }
     for (AstNode* node : astNodes) {
+        // if its a ornode ,check if its left or right has star or plus or question
         // if it a or node , check if the subtree has star or plus or question
         // if node found ,from that node , check if it has dot or character class
         if (OrAstNode* orNode = dynamic_cast<OrAstNode*>(node)) {
+            if (OR_HAS_STAR_PLUS_QUESTION_AS_CHILD(orNode)) return false;
             AstNode* starPlusQuestion = OR_has_STAR_PLUS_QUESTION(orNode);
             if (starPlusQuestion) {
                 AstNode* dotChar = STAR_PLUS__QUESTION_has_DOT_CHAR(starPlusQuestion);
@@ -68,6 +71,8 @@ bool canSolve(std::vector<AstNode*> astNodes) {
                 return false;
             }
         }
+
+        
 
 
         // if its star , plus or question , check if the subtree has OR node
@@ -241,6 +246,30 @@ AstNode* STAR_PLUS__QUESTION_has_OR(AstNode* node) {
     }
     if (QuestionAstNode* questionNode = dynamic_cast<QuestionAstNode*>(node)) {
         return STAR_PLUS__QUESTION_has_OR(questionNode->left);
+    }
+    return nullptr;
+}
+
+AstNode* OR_HAS_STAR_PLUS_QUESTION_AS_CHILD(AstNode* node) {
+    if (OrAstNode* orNode = dynamic_cast<OrAstNode*>(node)) {
+        if (StarAstNode* starNode = dynamic_cast<StarAstNode*>(orNode->left)) {
+            return starNode;
+        }
+        if (PlusAstNode* plusNode = dynamic_cast<PlusAstNode*>(orNode->left)) {
+            return plusNode;
+        }
+        if (QuestionAstNode* questionNode = dynamic_cast<QuestionAstNode*>(orNode->left)) {
+            return questionNode;
+        }
+        if (StarAstNode* starNode = dynamic_cast<StarAstNode*>(orNode->right)) {
+            return starNode;
+        }
+        if (PlusAstNode* plusNode = dynamic_cast<PlusAstNode*>(orNode->right)) {
+            return plusNode;
+        }
+        if (QuestionAstNode* questionNode = dynamic_cast<QuestionAstNode*>(orNode->right)) {
+            return questionNode;
+        }
     }
     return nullptr;
 }
