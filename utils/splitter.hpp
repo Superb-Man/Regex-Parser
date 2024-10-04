@@ -8,10 +8,11 @@ AstNode* generateTree(std::string regex) {
 
     try {
         AstNode* ast = parser.parse();
+        // ast->print();
         bool flag = canSolve(parser.getAstNodes());
         if (!flag) { 
-            std::cout << "NOT YET IMPLEMENTED" << std::endl;
-            exit(-1);
+            std::cout << "NOT YET IMPLEMENTED\nWon't match anything" << std::endl;
+            return nullptr;
         }
 
         return ast;
@@ -29,9 +30,9 @@ struct Splitter {
 
     bool checkNode(AstNode* node, std::string text, int checkerStart, int checkerEnd) {
         std::string temp = text.substr(checkerStart, checkerEnd - checkerStart + 1);
-        // std::cout << "temp: " << temp << std::endl;
+        std::cout << "temp: " << temp << std::endl;
         checkerStart = 0; 
-        if (node->matchL(temp, checkerStart) || checkerStart != temp.size()) return false;
+        if (!node->matchL(temp, checkerStart) || checkerStart != temp.size()) return false;
 
         return true;
 
@@ -40,8 +41,29 @@ struct Splitter {
     // .* handle
     
     Splitter(std::string regex) {
-        this->regex = Simplifier(generateTree(regex)).simplifiedRegex;
-        std::cout << "Simplified regex: " << this->regex << std::endl;
+        AstNode* ast = generateTree(regex);
+        if (!ast) {
+            this->regex = "";
+        }
+        else {
+            this->regex = Simplifier(ast).simplifiedRegex;
+            std::cout << "Simplified regex: " << this->regex << std::endl;
+            split();
+        }
+    }
+
+    bool insertPrevRegX(std::string temp,std::vector<std::pair<AstNode*, std::string>> &roots) {
+        if (temp.size()) {
+            AstNode* ast = generateTree(temp);
+            if (ast) {
+                roots.push_back({ast, temp});
+            }
+            else {
+                roots.clear();
+                return false;
+            }
+        }
+        return true;
     }
 
     // only handling the .* for now
@@ -58,14 +80,8 @@ struct Splitter {
                 while (i < regex.size() && regex[i] != ']') {
                     i++;
                 }
-                if (i + 1 < regex.size() && regex[i+1] == '*') {
-                    if (temp.size())    roots.push_back({generateTree(temp), temp});
-                    roots.push_back({generateTree(regex.substr(startingBracket, i +1 - startingBracket + 1)), regex.substr(startingBracket, i+1 - startingBracket + 1)});
-                    i++;
-                    temp = "";
-                }
-                else if (i + 1 < regex.size() && regex[i+1] == '+') {
-                    if (temp.size())    roots.push_back({generateTree(temp), temp});
+                if (i + 1 < regex.size() && (regex[i+1] == '*' || regex[i+1] == '+')) {
+                    if (!insertPrevRegX(temp, roots)) return;
                     roots.push_back({generateTree(regex.substr(startingBracket, i +1 - startingBracket + 1)), regex.substr(startingBracket, i+1 - startingBracket + 1)});
                     i++;
                     temp = "";
@@ -74,17 +90,10 @@ struct Splitter {
                     temp += regex.substr(startingBracket, i - startingBracket + 1);
                 }
             }
-            //for .*
-            else if (i +1 < regex.size() && regex[i] == '.' && regex[i+1] == '*') {
-                if (temp.size())    roots.push_back({generateTree(temp), temp});
-                roots.push_back({generateTree(".*"), ".*"});
-                i++;
-                temp = "";
-            }
-            //for .+
-            else if (i +1 < regex.size() && regex[i] == '.' && regex[i+1] == '+') {
-                if (temp.size()) roots.push_back({generateTree(temp), temp});
-                roots.push_back({generateTree(".+"), ".+"});
+            //for .*, .+
+            else if (i +1 < regex.size() && regex[i] == '.' && (regex[i+1] == '+' || regex[i+1] == '*')) {
+                if (!insertPrevRegX(temp, roots)) return;
+                roots.push_back({generateTree(regex.substr(i, 2)), regex.substr(i, 2)});
                 i++;
                 temp = "";
             }
@@ -92,15 +101,16 @@ struct Splitter {
                 temp += regex[i];
             }
         }
-        if (temp.size()) {
-            roots.push_back({generateTree(temp), temp});
-        }
+        insertPrevRegX(temp, roots);
 
-        // std::cout << "Roots size: " << roots.size() << std::endl;
+        std::cout << "Roots size: " << roots.size() << std::endl;
     }
 
     bool match(std::string text) {
         // std::cout << "text size: " << text.size() << std::endl;
+        if (roots.size() == 0) {
+            return false;
+        }
 
         int pos = 0;
         int visited = 0;
@@ -108,12 +118,13 @@ struct Splitter {
         int checkerEnd = -1;
 
         for (int i = 0; i < roots.size() ; i++) {
+            // roots[i].first->print();
             visited++;
-            // std::cout << "root index: " << i << " ";
-            // std::cout << "root: " << roots[i].second << std::endl;
+            std::cout << "root index: " << i << " ";
+            std::cout << "root: " << roots[i].second << std::endl;
             if (roots[i].second == ".*") continue;
             if (roots[i].second == ".+") {
-                pos++;
+                pos = std::min(pos+1,(int)text.size());
                 continue;
             }
             // if it contains [....]*
@@ -122,9 +133,23 @@ struct Splitter {
                 // std::cout << "checkerStart: " << checkerStart << std::endl;
                 continue;
             }
-            if (roots[i].second[roots[i].second.size() - 1] == '*' && roots[i].second[roots[i].second.size() - 2] == ']') {
+            if (roots[i].second[roots[i].second.size() - 1] == '+' && roots[i].second[roots[i].second.size() - 2] == ']') {
                 checkerStart = pos;
-                pos++;
+                // if next two is .* or .+ then give a check for the next character
+                if (i + 1 < roots.size() && (roots[i+1].second == ".*" || roots[i+1].second == ".+")) {
+                    // match any character in the [....] node
+                    // make astNode [] from []+
+                    // get the left node of the star node with casting
+                    PlusAstNode* node = dynamic_cast<PlusAstNode*>(roots[i].first);
+                    CharacterClassAstNode* newNode = dynamic_cast<CharacterClassAstNode*>(node->left);
+
+                    if (newNode->matchL(text, pos)) pos++;
+                    else return false;
+                }
+                else {
+                    pos = std::min(pos+1,(int)text.size());
+                }
+                std::cout << "checkerStart: " << checkerStart << std::endl;
                 continue;
             }
 
@@ -135,15 +160,31 @@ struct Splitter {
             }
 
             if (i == roots.size() - 1 && roots.size() > 1) {
-                pos = text.size() - 1; 
-                if (!roots[i].first->matchR(text, pos)) return false;
+                std::cout << "Last node" << std::endl;
+                // pos = text.size() - 1; 
+                // if (!roots[i].first->matchR(text, pos)) return false;
+                int prev = pos;
+                // std::cout << "prev is " << prev << " pos is " << pos << std::endl;
+                for (int j = pos; j < text.size(); j++) {
+                    int t = j-1;
+                    if (roots[i].first->matchL(text, j) && j == text.size()) {
+                        pos = t;
+                        // std::cout << "Pos is " << pos << std::endl;
+                        break;
+                    }
+                }
+                std::cout << "prev is " << prev << " pos is " << pos << std::endl;
+
+                if (prev == pos) return false;
+
+
 
                 // for []+ and []*;
                 if (i-1 >= 0 && (roots[i-1].second[roots[i-1].second.size() - 1] == '*' || roots[i-1].second[roots[i-1].second.size() - 1] == '+') && roots[i-1].second[roots[i-1].second.size() - 2] == ']') {
                     checkerEnd = pos ;
-                    // std::cout << "checkerStart: " << checkerStart << " checkerEnd: " << checkerEnd << std::endl;
+                    std::cout << "checkerStart: " << checkerStart << " checkerEnd: " << checkerEnd << std::endl;
                     if (checkerStart != -1 && checkerEnd != -1) {
-                        if (checkNode(roots[i-1].first, text, checkerStart, checkerEnd)) {
+                        if (!checkNode(roots[i-1].first, text, checkerStart, checkerEnd)) {
                             return false;
                         }
                         checkerStart = -1;
@@ -204,6 +245,10 @@ struct Splitter {
     }
 
     std::pair<std::string,bool> matchedString(std::string text) {
+        // std::cout << "Roots size :" << roots.size() << std::endl;
+        if (roots.size() == 0) {
+            return {"", false};
+        }
         if (match(text)) {
             return {text, true};
         }

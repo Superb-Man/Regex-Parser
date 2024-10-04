@@ -2,13 +2,11 @@
 
 /**
  * @brief Not Implemented cases
- * REGEX = .*
- * REGEX = .+
  * REGEX = .?
- * REGEX = []*
- * REGEX = []+
  * REGEX = []?
  * REGEX = ?!
+ * (a*|b*)
+ * (a*|b*)b
  * REGEX = one of the above regex | one of the above regex , one of the above regex | handled regex, handled regex | one of the above regex
  * 
  */

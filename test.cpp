@@ -1,69 +1,75 @@
 #include "utils/splitter.hpp"
 
 int main() {
-    std::string regex; 
-    std::string text;
-    // regex = "a+b*(c+de)*f";
-    // regex = "a*b+c?(d+)?";
-    // regex = "a[a-zA-Z0-9.]";
-    // regex = "a*b+c?d*?xyz+";
-    // regex = "a(?!lara)62";
-    // regex = "a(?![a-z])62";
-    regex = "a(.6)*d";
-    // regex = "a[0-9]62";
-    // regex = "acd*b";
-    // regex = "a.?b";
-    // regex = "a[a-z]b";
-    // regex = "a(.bc|c*)+";
-    // regex = "a([a-z].)*";
-    regex = "a(.s|a)*62";
-    // regex = "[a-z]*b";
-    regex = "a(.sb)*bc*";
-    // regex = "cd[a-z]|a(.bc)*b*";
-    // regex = "ad|(b|.c)*";
-    // regex = "a.?b";
-    regex = "a(a|bc)*(bc|b)";
-    // regex = "aaab";
-    regex = "a(ab|cd?e)*abc";
-    // regex = "([0-9a-d.]|a*(b|(cd+|e*f)))bd";
-    // regex = "a.*b";
-    // regex = "a((.)*)bcd+(((c)d)e)";
-    // regex = "a.*b[0-9]+b+b*";
-    // regex = "a*a+";
-    regex = "a.*b*cd+.*f";
-    // regex = "a(.bc)*d";
-    regex = "a*b*.*g*.+";
-    regex = "abcd+.*f";
-    regex = "ab*b?c+.*f";
-    regex = "a?ab";
-    regex = "a*";
-    regex = "a*[dzf]*dfb*";
-    regex = "[a-c]+";
-    // regex = "a+";
-    regex = ".*a+[s-v0-5]*bcd+e(a|b)*";
-    regex = "abc[a-d]?.*abc";
-    regex = "(ab*)*|b(c|d+)";
-    regex = "a*|c*";
-    regex = "(a|b)b";
-    std::cout << regex << std::endl;
+    std::vector<std::string> regexPatterns = {
+        // "a.?b",
+        // "a+b*(c+de)*f",
+        // "a*b+c?(d+)?",
+        // "a[a-zA-Z0-9.]",
+        // "a*b+c?d*?xyz+",
+        // "a(.6)*d",
+        // "a[0-9]62",
+        // "acd*b",
+        //cd "a?b",
+        // "a[a-z]b",
+        // "a(.bc|c*)+",
+        // "a([a-z].)*",
+        // "a(.s|a)*62",
+        // "[a-z]*b",
+        // "a(.sb)*bc*",
+        // "cd[a-z]|a(.bc)*b*",
+        // "ad|(b|.c)*",
+        // "a.?b",
+        // "a(a|bc)*(bd|b)",
+        // "aaab",
+        // "b|bd", /////////////////////////////DON'T WORK
+        // "a*(b|(cd+|e*f))bd",
+        // "([0-9]|a*(b|(cd+|e*f)))bd",
+        // "a.*b",
+        // "a((.)*)bcd+(((c)d)e)",
+        // "a.*b[0-9]+b+b*",
+        // "a*a+",
+        // "a.*b*cd+.*f",
+        // "a(.bc)*d",
+        // "a*b*.*g*.+",
+        // "abcd+.*f", //////////////////TESTED UPTO IT
+        "ab*b?c+.*f",
+        "a?ab",
+        "a*",
+        "a*[dzf]*dfb*",
+        "[a-c]+",
+        "a+",
+        ".*a+[s-v0-5]*bcd+e(a|b)*",
+        "abc[a-d]?.*abc",
+        "(ab*)*|b(c|d+)",
+        "a*|c*",
+        "(a|b)b",
+        "a.*[a-c]+d",
+        "a[a-c]+.*d",
+        "[a-c]+a*a+a",
+        ".+ba",
+        "a(ab|cd?e)*abc"
+    };
 
-    Splitter splitter(regex);
+    for (std::string regex : regexPatterns) {
+        Splitter splitter(regex);
 
-    splitter.split();
+        while (true) {
+            std::cout << "Regex: " << regex << std::endl;
+            std::string text;
+            std::cout << "Enter a text: ";
+            std::getline(std::cin, text);
+            if (text == "exit") {
+                break;
+            }
+            std::pair<std::string, bool> result = splitter.matchedString(text);
 
-    while (true) {
-        std::cout << "Enter a text: ";
-        std::getline(std::cin, text);
-        if (text == "exit") {
-            return 0;
-        }
-        std::pair<std::string, bool> result = splitter.matchedString(text);
-
-        if (result.second) {
-            std::cout << "Matched up to pos " << result.first.size() << std::endl;
-            std::cout << "Matched string: " << result.first << std::endl;
-        } else {
-            std::cout << "Not matched" << std::endl;
+            if (result.second) {
+                std::cout << "Matched up to pos " << result.first.size() << std::endl;
+                std::cout << "Matched string: " << result.first << std::endl;
+            } else {
+                std::cout << "Not matched" << std::endl;
+            }
         }
     }
 }

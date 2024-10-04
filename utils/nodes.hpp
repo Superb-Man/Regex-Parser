@@ -60,10 +60,13 @@ public:
     }
 
     bool matchL(std::string& str, int& pos) override {
+        int originalPos = pos;
         if (left->matchL(str, pos)) {
+            // std::cout << "Matched left pos " << pos << std::endl;
             return true;
         }
-        
+        // std::cout << "Pos after left " << pos << std::endl;
+        pos = originalPos;
         return right->matchL(str, pos);
     }
     
