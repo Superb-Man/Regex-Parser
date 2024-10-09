@@ -33,22 +33,25 @@ int main() {
         // "a(.bc)*d",
         // "a*b*.*g*.+",
         // "abcd+.*f", //////////////////TESTED UPTO IT
-        "ab*b?c+.*f",
-        "a?ab",
-        "a*",
-        "a*[dzf]*dfb*",
-        "[a-c]+",
-        "a+",
-        ".*a+[s-v0-5]*bcd+e(a|b)*",
-        "abc[a-d]?.*abc",
-        "(ab*)*|b(c|d+)",
-        "a*|c*",
-        "(a|b)b",
-        "a.*[a-c]+d",
-        "a[a-c]+.*d",
-        "[a-c]+a*a+a",
-        ".+ba",
-        "a(ab|cd?e)*abc"
+        // "ab*b?c+.*f",
+        // "a?ab",
+        // "a*",
+        // "a*[dzf]*dfb*",
+        // "[a-c]+z",
+        // "a+",
+        // ".*a+[s-v0-5]*bcd+e(a|b)*",  ///////////WORKING
+        // ".*a+.*bcd+e(a|b)*", //////////WORKING
+        // "[a-c]+a[a-c]+",
+        // ".*a[a-c]+",
+        // "abc[a-d]?.*abc",
+        // "(ab*)*|b(c|d+)",
+        // "a*|c*",
+        // "(a|b)b",
+        // "a.*[a-c]+d",
+        // "a[a-c]+.*d",
+        // "[a-c]+a*a+a",
+        // ".+ba",
+        //"a(c|b)*abc"
     };
 
     for (std::string regex : regexPatterns) {

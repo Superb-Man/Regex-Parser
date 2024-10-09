@@ -103,11 +103,9 @@ struct Splitter {
         }
         insertPrevRegX(temp, roots);
 
-        std::cout << "Roots size: " << roots.size() << std::endl;
+        // std::cout << "Roots size: " << roots.size() << std::endl;
     }
-
     bool match(std::string text) {
-        // std::cout << "text size: " << text.size() << std::endl;
         if (roots.size() == 0) {
             return false;
         }
@@ -117,132 +115,163 @@ struct Splitter {
         int checkerStart = -1;
         int checkerEnd = -1;
 
-        for (int i = 0; i < roots.size() ; i++) {
-            // roots[i].first->print();
+        auto checkSubstringMatchTwice = [&](int i, int endPos) {
+            bool t = false;
+            for (int j = std::max(checkerStart-1,0); j <= checkerEnd; j++) {
+                if (roots[i-1].first->matchL(text, j) && checkNode(roots[i].first, text, j, checkerEnd)) {
+                    checkerStart = -1;
+                    checkerEnd = -1;
+                    t = true;
+                    break;
+                }
+            }
+            return t;
+        };
+
+        auto checkSubstringMatch = [&](int i, int endPos) {
+            bool t = false;
+            for (int j = std::max(checkerStart-1,0); j <= checkerEnd; j++) {
+                if (checkNode(roots[i].first, text, j, checkerEnd)) {
+                    checkerStart = -1;
+                    checkerEnd = -1;
+                    t = true;
+                    break;
+                }
+            }
+            return t;
+        };
+
+        auto handleLastNode = [&](int i, bool t) {
+            if (!t) return false;
+            if (checkerStart != -1 && checkerEnd != -1) {
+                return checkNode(roots[i-1].first, text, checkerStart, checkerEnd);
+            }
+            return true;
+        };
+
+        for (int i = 0; i < roots.size(); i++) {
             visited++;
             std::cout << "root index: " << i << " ";
             std::cout << "root: " << roots[i].second << std::endl;
+
             if (roots[i].second == ".*") continue;
             if (roots[i].second == ".+") {
                 pos = std::min(pos+1,(int)text.size());
                 continue;
             }
-            // if it contains [....]*
-            if (roots[i].second[roots[i].second.size() - 1] == '*' && roots[i].second[roots[i].second.size() - 2] == ']') {
+            
+            if (roots[i].second.back() == '*' && roots[i].second[roots[i].second.size() - 2] == ']') {
                 checkerStart = pos;
-                // std::cout << "checkerStart: " << checkerStart << std::endl;
                 continue;
             }
-            if (roots[i].second[roots[i].second.size() - 1] == '+' && roots[i].second[roots[i].second.size() - 2] == ']') {
+            if (roots[i].second.back() == '+' && roots[i].second[roots[i].second.size() - 2] == ']') {
                 checkerStart = pos;
-                // if next two is .* or .+ then give a check for the next character
                 if (i + 1 < roots.size() && (roots[i+1].second == ".*" || roots[i+1].second == ".+")) {
-                    // match any character in the [....] node
-                    // make astNode [] from []+
-                    // get the left node of the star node with casting
                     PlusAstNode* node = dynamic_cast<PlusAstNode*>(roots[i].first);
                     CharacterClassAstNode* newNode = dynamic_cast<CharacterClassAstNode*>(node->left);
-
-                    if (newNode->matchL(text, pos)) pos++;
+                    int t = pos;
+                    if (newNode->matchL(text, t)) pos++;
                     else return false;
-                }
+                } 
                 else {
-                    pos = std::min(pos+1,(int)text.size());
+                    pos = std::min(pos+1, (int)text.size());
                 }
-                std::cout << "checkerStart: " << checkerStart << std::endl;
                 continue;
             }
 
             if (i == 0) {
                 if (!roots[i].first->matchL(text, pos)) return false;
-                // pos = 0;
                 continue;
             }
 
             if (i == roots.size() - 1 && roots.size() > 1) {
-                std::cout << "Last node" << std::endl;
-                // pos = text.size() - 1; 
-                // if (!roots[i].first->matchR(text, pos)) return false;
-                int prev = pos;
-                // std::cout << "prev is " << prev << " pos is " << pos << std::endl;
+                bool changed = false;
+                std::cout << "pos: " << pos << std::endl;
                 for (int j = pos; j < text.size(); j++) {
-                    int t = j-1;
+                    int t = j - 1;
                     if (roots[i].first->matchL(text, j) && j == text.size()) {
+                        std::cout << "Matched at pos: " << j << std::endl;
                         pos = t;
-                        // std::cout << "Pos is " << pos << std::endl;
+                        changed = true;
                         break;
                     }
                 }
-                std::cout << "prev is " << prev << " pos is " << pos << std::endl;
-
-                if (prev == pos) return false;
-
-
+                if (!changed) return false;
 
                 // for []+ and []*;
-                if (i-1 >= 0 && (roots[i-1].second[roots[i-1].second.size() - 1] == '*' || roots[i-1].second[roots[i-1].second.size() - 1] == '+') && roots[i-1].second[roots[i-1].second.size() - 2] == ']') {
-                    checkerEnd = pos ;
-                    std::cout << "checkerStart: " << checkerStart << " checkerEnd: " << checkerEnd << std::endl;
-                    if (checkerStart != -1 && checkerEnd != -1) {
-                        if (!checkNode(roots[i-1].first, text, checkerStart, checkerEnd)) {
-                            return false;
-                        }
-                        checkerStart = -1;
-                        checkerEnd = -1;
-                    }
-                }
 
+                if (i-1 >= 0 && (roots[i-1].second.back() == '*' || roots[i-1].second.back() == '+') && roots[i-1].second[roots[i-1].second.size() - 2] == ']') {
+                    checkerEnd = pos;
+                    if (i-3 >= 0 && (roots[i-3].second == ".*" || roots[i-3].second == ".+")) {
+                        if (!checkSubstringMatchTwice(i-1, checkerEnd)) return false;
+                        continue;
+                    }
+                    if (i-2 >= 0 && (roots[i-2].second == ".*" || roots[i-2].second == ".+")) {
+                        if (!checkSubstringMatch(i-1, checkerEnd)) return false;
+                        continue;
+                    }
+                    if (!checkNode(roots[i-1].first, text, checkerStart, checkerEnd)) return false;
+                    checkerStart = -1;
+                    checkerEnd = -1;
+                    continue;
+                }
                 continue;
             }
 
             bool t = false;
-            // std::cout << pos << std::endl;
             for (int j = pos; j < text.size(); j++) {
-                checkerEnd = j - 1 ;
+                checkerEnd = j - 1;
                 t = roots[i].first->matchL(text, j);
                 if (t) {
-                    // std::cout << "pos: " << j << std::endl;
+                    std::cout << "Matched at pos: " << checkerEnd << std::endl;
                     pos = j;
                     break;
                 }
             }
-
             if (!t) return false;
-
+            
             // for []+ and []*;
             // make substring from checkerStart to pos if checkerStart != -1
-            // std::cout << "checkerStart: " << checkerStart << " checkerEnd: " << checkerEnd << std::endl;
             if (checkerStart != -1 && checkerEnd != -1) {
-                if (i - 1 >= 0 && checkNode(roots[i-1].first, text, checkerStart, checkerEnd)) {
-                    return false;
+                if (i-3 >= 0 && (roots[i-3].second == ".*" || roots[i-3].second == ".+")) {
+                    if (!checkSubstringMatchTwice(i-1, checkerEnd)) return false;
+                    continue;
                 }
+                if (i-2 >= 0 && (roots[i-2].second == ".*" || roots[i-2].second == ".+")) {
+                    if (!checkSubstringMatch(i-1, checkerEnd)) return false;
+                    continue;
+                }
+                if (!checkNode(roots[i-1].first, text, checkerStart, checkerEnd)) return false;
                 checkerStart = -1;
                 checkerEnd = -1;
             }
-
-            // std::cout << "total visited: " << visited << std::endl;
-            // std::cout << "pos: " << pos << std::endl;
-
         }
-        // std::cout << "pos: " << pos << std::endl;
+
         if (visited != roots.size()) return false;
+
+        if ((roots.back().second.back() == '*' || roots.back().second.back() == '+') && roots.back().second[roots.back().second.size() - 2] == ']') {
+            if (text.empty() && roots.back().second.back() == '+') return false;
+            checkerEnd = text.size() - 1;
+            if (roots.size() == 1) return roots.back().first->matchL(text, pos);
+            if (roots.size() - 2 >= 0 && (roots[roots.size()-2].second == ".*" || roots[roots.size()-2].second == ".+")) {
+                return checkSubstringMatch(roots.size()-1, checkerEnd);
+            }
+            if (roots.size() - 3 >= 0 && (roots[roots.size()-3].second == ".*" || roots[roots.size()-3].second == ".+")) {
+                return checkSubstringMatchTwice(roots.size()-1, checkerEnd);
+            }
+            return checkNode(roots.back().first, text, checkerStart, checkerEnd);
+        }
+
         if (roots.size() == 1) {
             if (pos == text.size()) return true;
             if (roots[0].second == ".*") return true;
             if (roots[0].second == ".+" && text.size() > 1) return true;
-            if (roots[0].second[roots[0].second.size() - 1] == '*' && roots[0].second[roots[0].second.size() - 2] == ']') {
-                return roots[0].first->matchL(text, pos);
-            }
-            if (roots[0].second[roots[0].second.size() - 1] == '+' && roots[0].second[roots[0].second.size() - 2] == ']' && text.size() > 1) {
-                return roots[0].first->matchL(text, pos);
-            }
-            return false ;
+            return false;
         }
 
         return true;
-
-
     }
+
 
     std::pair<std::string,bool> matchedString(std::string text) {
         // std::cout << "Roots size :" << roots.size() << std::endl;
@@ -265,4 +294,3 @@ struct Splitter {
 
 
 };
-
